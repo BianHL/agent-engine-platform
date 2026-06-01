@@ -68,6 +68,29 @@ async def chat_completions(
     llm_messages = [{"role": "system", "content": system_prompt}]
     llm_messages.extend(body.messages)
 
+    # Knowledge retrieval: if agent has knowledge bases, retrieve relevant chunks
+    citations = []
+    kb_ids = agent.knowledge_base_ids if hasattr(agent, 'knowledge_base_ids') and agent.knowledge_base_ids else []
+    if kb_ids and last_msg:
+        try:
+            from app.engines.knowledge_engine.retriever.retriever import HybridRetriever
+            for kb_id in kb_ids:
+                retriever = HybridRetriever()
+                results = await retriever.retrieve(kb_id=kb_id, query=last_msg, top_k=3)
+                for r in results:
+                    citations.append({
+                        "content": r.get("content", "")[:200],
+                        "score": r.get("score", 0),
+                        "document_id": r.get("document_id", ""),
+                        "knowledge_base_id": kb_id,
+                    })
+                    # Inject retrieved context into system prompt
+            if citations:
+                context_text = "\n\n".join([f"[Source {i+1}] {c['content']}" for i, c in enumerate(citations)])
+                llm_messages[0]["content"] += f"\n\nRelevant knowledge:\n{context_text}"
+        except Exception:
+            pass  # Retrieval is optional; don't block chat on failure
+
     # Get LLM adapter from app state
     llm_adapter = getattr(request.app.state, "llm_adapter", None)
     if not llm_adapter:
@@ -111,6 +134,7 @@ async def chat_completions(
         "model": response.model,
         "usage": response.usage.dict() if hasattr(response.usage, "dict") else response.usage,
         "conversation_id": conv_id,
+        "citations": citations,
     }
 
 

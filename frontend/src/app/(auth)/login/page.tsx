@@ -1,17 +1,30 @@
 'use client';
-import React, { useState, Suspense } from 'react';
-import { Card, Form, Input, Button, Typography, message } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import React, { useState, Suspense, useEffect } from 'react';
+import { Card, Form, Input, Button, Typography, message, Divider, Space } from 'antd';
+import { UserOutlined, LockOutlined, GithubOutlined, GoogleOutlined, WechatOutlined } from '@ant-design/icons';
 import { useAuthStore } from '@/store/auth';
 import { useRouter, useSearchParams } from 'next/navigation';
+import api from '@/lib/api';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
+
+interface SSOProvider {
+  id: string;
+  provider_name: string;
+  enabled: boolean;
+}
 
 function LoginForm() {
   const [loading, setLoading] = useState(false);
+  const [ssoProviders, setSsoProviders] = useState<SSOProvider[]>([]);
   const { login } = useAuthStore();
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // Load SSO providers
+    api.get('/auth/sso/providers').then(setSsoProviders).catch(() => {});
+  }, []);
 
   const onFinish = async (values: { username: string; password: string }) => {
     setLoading(true);
@@ -25,6 +38,41 @@ function LoginForm() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSSO = async (providerName: string) => {
+    try {
+      if (providerName === 'wecom') {
+        const data = await api.get('/auth/wecom/login');
+        if (data.url) {
+          window.location.href = data.url;
+        }
+      } else if (providerName === 'github' || providerName === 'google') {
+        // Standard OAuth2 flow — redirect to backend
+        window.location.href = `/api/v1/auth/${providerName}/login`;
+      }
+    } catch {
+      message.error('SSO login failed');
+    }
+  };
+
+  const enabledProviders = ssoProviders.filter(p => p.enabled);
+  const hasSSO = enabledProviders.length > 0;
+
+  const getProviderIcon = (name: string) => {
+    if (name === 'github') return <GithubOutlined />;
+    if (name === 'google') return <GoogleOutlined />;
+    if (name === 'wecom') return <WechatOutlined />;
+    return null;
+  };
+
+  const getProviderLabel = (name: string) => {
+    const labels: Record<string, string> = {
+      github: 'GitHub',
+      google: 'Google',
+      wecom: '企业微信',
+    };
+    return labels[name] || name;
   };
 
   return (
@@ -66,6 +114,30 @@ function LoginForm() {
           Agent Engine
         </Title>
       </div>
+
+      {/* SSO Buttons */}
+      {hasSSO && (
+        <>
+          <Space direction="vertical" style={{ width: '100%', marginBottom: 16 }}>
+            {enabledProviders.map(p => (
+              <Button
+                key={p.id}
+                block
+                size="large"
+                icon={getProviderIcon(p.provider_name)}
+                onClick={() => handleSSO(p.provider_name)}
+                style={{ borderRadius: 6, textAlign: 'left' }}
+              >
+                Sign in with {getProviderLabel(p.provider_name)}
+              </Button>
+            ))}
+          </Space>
+          <Divider style={{ margin: '16px 0' }}>
+            <Text type="secondary" style={{ fontSize: 12 }}>or</Text>
+          </Divider>
+        </>
+      )}
+
       <Form onFinish={onFinish}>
         <Form.Item
           name="username"

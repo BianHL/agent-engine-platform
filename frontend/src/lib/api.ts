@@ -279,6 +279,11 @@ class ApiClient {
     return resp.data;
   }
 
+  async discoverModels(providerId: string): Promise<any> {
+    const resp = await this.client.get(`/models/discover/${providerId}`);
+    return resp.data;
+  }
+
   // Documents
   async listDocuments(kbId: string, page = 1, size = 50): Promise<PaginatedResponse<Document>> {
     const resp = await this.client.get(`/knowledge/bases/${kbId}/documents`, { params: { page, size } });
@@ -636,6 +641,105 @@ class ApiClient {
 
   async crawlUrlToKnowledgeBase(kbId: string, data: { url: string; max_pages?: number; allowed_domains?: string[]; chunk_size?: number; chunk_overlap?: number }): Promise<any> {
     const resp = await this.client.post(`/knowledge/bases/${kbId}/documents/crawl`, data);
+    return resp.data;
+  }
+
+  // Agent Versions
+  async listAgentVersions(agentId: string): Promise<any> {
+    const resp = await this.client.get(`/agent-versions/${agentId}/versions`);
+    return resp.data;
+  }
+
+  async createAgentVersion(agentId: string, data: { change_log?: string }): Promise<any> {
+    const resp = await this.client.post(`/agent-versions/${agentId}/versions`, data);
+    return resp.data;
+  }
+
+  async activateAgentVersion(agentId: string, versionId: string): Promise<any> {
+    const resp = await this.client.put(`/agent-versions/${agentId}/versions/${versionId}/activate`);
+    return resp.data;
+  }
+
+  async deleteAgentVersion(agentId: string, versionId: string): Promise<any> {
+    const resp = await this.client.delete(`/agent-versions/${agentId}/versions/${versionId}`);
+    return resp.data;
+  }
+
+  // A/B Tests
+  async listABTests(agentId: string): Promise<any> {
+    const resp = await this.client.get(`/agent-versions/${agentId}/ab-tests`);
+    return resp.data;
+  }
+
+  async createABTest(agentId: string, data: { name: string; version_a: string; version_b: string; traffic_split: number }): Promise<any> {
+    const resp = await this.client.post(`/agent-versions/${agentId}/ab-tests`, data);
+    return resp.data;
+  }
+
+  async startABTest(agentId: string, testId: string): Promise<any> {
+    const resp = await this.client.post(`/agent-versions/${agentId}/ab-tests/${testId}/start`);
+    return resp.data;
+  }
+
+  async stopABTest(agentId: string, testId: string): Promise<any> {
+    const resp = await this.client.post(`/agent-versions/${agentId}/ab-tests/${testId}/stop`);
+    return resp.data;
+  }
+
+  async getABTestResults(agentId: string, testId: string): Promise<any> {
+    const resp = await this.client.get(`/agent-versions/${agentId}/ab-tests/${testId}/results`);
+    return resp.data;
+  }
+
+  // Workflow Versions & Executions
+  async listWorkflowVersions(workflowId: string): Promise<any> {
+    const resp = await this.client.get(`/workflows/${workflowId}/versions`);
+    return resp.data;
+  }
+
+  async getWorkflowVersion(workflowId: string, versionId: string): Promise<any> {
+    const resp = await this.client.get(`/workflows/${workflowId}/versions/${versionId}`);
+    return resp.data;
+  }
+
+  async rollbackWorkflowVersion(workflowId: string, versionId: string): Promise<any> {
+    const resp = await this.client.post(`/workflows/${workflowId}/versions/${versionId}/rollback`);
+    return resp.data;
+  }
+
+  async listWorkflowExecutions(workflowId: string): Promise<any> {
+    const resp = await this.client.get(`/workflows/${workflowId}/executions`);
+    return resp.data;
+  }
+
+  async getWorkflowExecution(executionId: string): Promise<any> {
+    const resp = await this.client.get(`/workflows/executions/${executionId}`);
+    return resp.data;
+  }
+
+  async resumeWorkflowExecution(executionId: string): Promise<any> {
+    const resp = await this.client.post(`/workflows/executions/${executionId}/resume`);
+    return resp.data;
+  }
+
+  // Workflow Debug
+  async startWorkflowDebug(workflowId: string, data: { mode: string; breakpoints?: string[] }): Promise<any> {
+    const resp = await this.client.post(`/workflow-debug/${workflowId}/debug/start`, data);
+    return resp.data;
+  }
+
+  async continueWorkflowDebug(workflowId: string, data: { action: string }): Promise<any> {
+    const resp = await this.client.post(`/workflow-debug/${workflowId}/debug/continue`, data);
+    return resp.data;
+  }
+
+  async stopWorkflowDebug(workflowId: string): Promise<any> {
+    const resp = await this.client.post(`/workflow-debug/${workflowId}/debug/stop`);
+    return resp.data;
+  }
+
+  async getWorkflowDebugState(workflowId: string): Promise<any> {
+    const resp = await this.client.get(`/workflow-debug/${workflowId}/debug/state`);
     return resp.data;
   }
 
