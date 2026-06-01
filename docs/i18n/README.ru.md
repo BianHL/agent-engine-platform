@@ -19,7 +19,7 @@
 
 <p align="center">
   <a href="../../LICENSE">
-    <img src="https://img.shields.io/badge/License-Private-red.svg" alt="License">
+    <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License">
   </a>
   <a href="../../backend/requirements.txt">
     <img src="https://img.shields.io/badge/python-%3E%3D3.11-blue.svg" alt="Python">
@@ -498,12 +498,24 @@ npm run lint       # Проверка ESLint
 
 ## Лицензия
 
-Частная / Проприетарная
+Этот проект лицензирован под Apache License 2.0 - подробности см. в файле [LICENSE](../../LICENSE).
+
+---
+
+## Участие
+
+Участие приветствуется! Не стесняйтесь отправлять Pull Request.
+
+1. Форкните репозиторий
+2. Создайте ветку функции (`git checkout -b feature/amazing-feature`)
+3. Зафиксируйте изменения (`git commit -m 'feat: add amazing feature'`)
+4. Отправьте в ветку (`git push origin feature/amazing-feature`)
+5. Откройте Pull Request
 
 ---
 
 ## Поддержка
 
 - **Документация**: [docs/](../../docs/)
-- **Обратная связь**: [GitHub Issues](https://github.com/your-org/agent-engine-platform/issues)
-- **Репозиторий**: [github.com/your-org/agent-engine-platform](https://github.com/your-org/agent-engine-platform)
+- **Обратная связь**: [GitHub Issues](https://github.com/BianHL/agent-engine-platform/issues)
+- **Репозиторий**: [github.com/BianHL/agent-engine-platform](https://github.com/BianHL/agent-engine-platform)

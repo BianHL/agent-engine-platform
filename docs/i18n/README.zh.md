@@ -19,7 +19,7 @@
 
 <p align="center">
   <a href="../../LICENSE">
-    <img src="https://img.shields.io/badge/License-Private-red.svg" alt="License">
+    <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License">
   </a>
   <a href="../../backend/requirements.txt">
     <img src="https://img.shields.io/badge/python-%3E%3D3.11-blue.svg" alt="Python">
@@ -497,12 +497,24 @@ npm run lint       # ESLint 检查
 
 ## License
 
-Private / Proprietary
+本项目基于 Apache License 2.0 开源 - 详见 [LICENSE](../../LICENSE) 文件。
+
+---
+
+## 贡献
+
+欢迎贡献！请随时提交 Pull Request。
+
+1. Fork 本仓库
+2. 创建特性分支 (`git checkout -b feature/amazing-feature`)
+3. 提交更改 (`git commit -m 'feat: add amazing feature'`)
+4. 推送到分支 (`git push origin feature/amazing-feature`)
+5. 开启 Pull Request
 
 ---
 
 ## 支持
 
 - **文档**: [docs/](../../docs/)
-- **问题反馈**: [GitHub Issues](https://github.com/your-org/agent-engine-platform/issues)
-- **仓库**: [github.com/your-org/agent-engine-platform](https://github.com/your-org/agent-engine-platform)
+- **问题反馈**: [GitHub Issues](https://github.com/BianHL/agent-engine-platform/issues)
+- **仓库**: [github.com/BianHL/agent-engine-platform](https://github.com/BianHL/agent-engine-platform)

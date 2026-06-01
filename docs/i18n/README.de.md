@@ -19,7 +19,7 @@
 
 <p align="center">
   <a href="../../LICENSE">
-    <img src="https://img.shields.io/badge/License-Private-red.svg" alt="Lizenz">
+    <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="Lizenz">
   </a>
   <a href="../../backend/requirements.txt">
     <img src="https://img.shields.io/badge/python-%3E%3D3.11-blue.svg" alt="Python">
@@ -496,14 +496,26 @@ npm run lint       # ESLint-Prüfung
 
 ---
 
-## Lizenz
+## License
 
-Privat / Proprietär
+Dieses Projekt ist unter der Apache License 2.0 lizenziert - siehe die [LICENSE](LICENSE)-Datei für Details.
+
+---
+
+## Beiträge
+
+Beiträge sind willkommen! Bitte zögern Sie nicht, eine Pull Request einzureichen.
+
+1. Forken Sie das Repository
+2. Erstellen Sie Ihren Feature-Branch (`git checkout -b feature/amazing-feature`)
+3. Commiten Sie Ihre Änderungen (`git commit -m 'feat: add amazing feature'`)
+4. Pushen Sie zum Branch (`git push origin feature/amazing-feature`)
+5. Erstellen Sie eine Pull Request
 
 ---
 
 ## Support
 
 - **Dokumentation**: [docs/](../../docs/)
-- **Problemfeedback**: [GitHub Issues](https://github.com/your-org/agent-engine-platform/issues)
-- **Repository**: [github.com/your-org/agent-engine-platform](https://github.com/your-org/agent-engine-platform)
+- **Problemfeedback**: [GitHub Issues](https://github.com/BianHL/agent-engine-platform/issues)
+- **Repository**: [github.com/BianHL/agent-engine-platform](https://github.com/BianHL/agent-engine-platform)

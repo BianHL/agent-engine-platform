@@ -19,7 +19,7 @@
 
 <p align="center">
   <a href="../../LICENSE">
-    <img src="https://img.shields.io/badge/License-Private-red.svg" alt="License">
+    <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License">
   </a>
   <a href="../../backend/requirements.txt">
     <img src="https://img.shields.io/badge/python-%3E%3D3.11-blue.svg" alt="Python">
@@ -497,12 +497,24 @@ npm run lint       # ESLint 검사
 
 ## License
 
-Private / Proprietary
+이 프로젝트는 Apache License 2.0에 따라 라이선스가 부여됩니다. 자세한 내용은 [LICENSE](../../LICENSE) 파일을 참조하세요.
+
+---
+
+## 기여
+
+기여를 환영합니다! Pull Request를 자유롭게 제출해 주세요.
+
+1. 리포지토리 포크
+2. 기능 브랜치 생성 (`git checkout -b feature/amazing-feature`)
+3. 변경 사항 커밋 (`git commit -m 'feat: add amazing feature'`)
+4. 브랜치에 푸시 (`git push origin feature/amazing-feature`)
+5. Pull Request 열기
 
 ---
 
 ## 지원
 
 - **문서**: [docs/](../../docs/)
-- **이슈 피드백**: [GitHub Issues](https://github.com/your-org/agent-engine-platform/issues)
-- **저장소**: [github.com/your-org/agent-engine-platform](https://github.com/your-org/agent-engine-platform)
+- **이슈 피드백**: [GitHub Issues](https://github.com/BianHL/agent-engine-platform/issues)
+- **저장소**: [github.com/BianHL/agent-engine-platform](https://github.com/BianHL/agent-engine-platform)
