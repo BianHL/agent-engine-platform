@@ -56,6 +56,7 @@ coverage.xml
 .claude/
 .impeccable/
 .understand-anything/
+.opencode/
 
 # Internal Dev Docs (not for public repo)
 dev-docs/
