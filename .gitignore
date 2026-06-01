@@ -51,3 +51,8 @@ docker-compose.override.yml
 htmlcov/
 .coverage
 coverage.xml
+
+# AI/Dev Tools
+.claude/
+.impeccable/
+.understand-anything/
