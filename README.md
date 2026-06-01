@@ -82,20 +82,32 @@ Agent Engine Platform is a full-stack intelligent agent application engine that 
 git clone <repository-url>
 cd agent-engine-platform
 
-# Copy environment variables and modify necessary configurations
-cp .env.example .env
-# Edit .env, at least set:
+```bash
+# 复制环境变量
+cp .env.docker .env      # Docker 部署 (使用 Docker 服务名)
+# 或: cp .env.example .env  # 本地开发 (使用 localhost)
+
+# 编辑 .env, 至少修改:
 #   DB_PASSWORD, REDIS_PASSWORD, NEO4J_PASSWORD
-#   SECRET_KEY, ENCRYPTION_KEY (must change for production)
+#   SECRET_KEY, ENCRYPTION_KEY (生产环境必须修改)
 ```
 
-### 2. Start All Services
+### 2. 启动服务
 
 ```bash
-# Full startup (all infrastructure + application services)
+# 开发环境 (热重载)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+# 生产环境 (资源限制 + 多副本)
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+# 快速启动 (基础配置)
+docker compose up -d
+
+# 全量启动 (自托管基础设施)
 docker compose --profile full up -d
 
-# Or use external database (only start app + Neo4j)
+# 外部数据库模式 (仅 Neo4j + 应用)
 docker compose --profile external-db up -d
 ```
 
@@ -320,35 +332,37 @@ All configurations are managed via environment variables. See `.env.example`.
 | `RATE_LIMIT_PER_MINUTE` | 60 | API rate limit |
 | `CELERY_WORKER_CONCURRENCY` | 4 | Celery worker concurrency |
 | `WORKFLOW_GLOBAL_TIMEOUT` | 300 | Workflow global timeout (seconds) |
-| `MAX_UPLOAD_SIZE_MB` | 50 | File upload size limit (MB) |
-| `SAFETY_INPUT_CHECK_ENABLED` | true | Input security detection toggle |
-| `SAFETY_OUTPUT_CHECK_ENABLED` | true | Output security detection toggle |
-
----
-
-## Deployment
-
-### Docker Deployment (Recommended)
-
 ```bash
-# 1. Configure environment variables
-cp .env.example .env
-vim .env  # Modify all <PRODUCTION> marked items
+# 1. 复制并修改环境变量
+cp .env.docker .env
+vim .env  # 修改所有 <PRODUCTION> 标记的项目
 
-# 2. Generate secure keys
+# 2. 生成安全密钥
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 
-# 3. Start
-docker compose --profile full up -d
+# 3. 启动 (生产模式)
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
-# 4. View logs
+# 4. 查看日志
 docker compose logs -f backend
 ```
 
-### Nginx HTTPS Configuration
+### Nginx HTTPS 配置
 
-Edit `nginx/nginx.conf`, uncomment HTTPS server block, place certificates in `nginx/ssl/`:
+编辑 `nginx/nginx.conf`，取消 HTTPS server 块注释，将证书放入 `nginx/ssl/`:
 
+```
+nginx/ssl/cert.pem
+nginx/ssl/key.pem
+```
+
+### 外部数据库模式
+
+如果 MySQL / Redis / Milvus / ES 由外部服务提供，在 `.env` 中配置连接 URL，然后:
+
+```bash
+docker compose --profile external-db up -d
+```
 ```
 nginx/ssl/cert.pem
 nginx/ssl/key.pem
@@ -442,8 +456,11 @@ agent-engine-platform/
 ├── nginx/                          # Nginx reverse proxy config
 ├── scripts/                        # Database init SQL
 ├── docs/                           # Documentation
-├── docker-compose.yml              # All services orchestration
-├── .env.example                    # Environment variables template
+├── docker-compose.yml              # Base Docker Compose config
+├── docker-compose.dev.yml          # Dev overrides (hot reload)
+├── docker-compose.prod.yml         # Prod overrides (resource limits)
+├── .env.docker                     # Docker environment template
+├── .env.example                    # Local dev env template
 └── AGENTS.md                       # Automation agent rules
 ```
 

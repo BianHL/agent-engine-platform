@@ -60,3 +60,8 @@ coverage.xml
 
 # Internal Dev Docs (not for public repo)
 dev-docs/
+
+# SSL certificates (production)
+nginx/ssl/*.pem
+nginx/ssl/*.key
+*.tsbuildinfo

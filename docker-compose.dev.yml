@@ -1,0 +1,52 @@
+version: '3.8'
+
+# ============================================
+# 开发环境覆盖配置
+# ============================================
+# 使用方式:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# 此文件提供:
+#   - 源码 volume mount (热重载)
+#   - uvicorn --reload (后端自动重启)
+#   - npm run dev (前端热重载)
+#   - 使用 .env 而非 .env.docker
+# ============================================
+
+x-app-common-dev: &app-common-dev
+  env_file: .env
+  volumes:
+    - ./backend:/app
+    - upload_data:/app/uploads
+
+services:
+  backend:
+    <<: *app-common-dev
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --proxy-headers
+
+  celery-worker:
+    <<: *app-common-dev
+
+  celery-beat:
+    <<: *app-common-dev
+
+  frontend:
+    env_file: .env
+    command: npm run dev
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - frontend_node_modules:/app/node_modules
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      - WATCHPACK_POLLING=true
+      - NODE_ENV=development
+
+  nginx:
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+
+volumes:
+  upload_data:
+  frontend_node_modules:

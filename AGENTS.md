@@ -35,7 +35,10 @@ This is a full-stack **Agent Engine Platform** with a Python backend and Next.js
 ├── docs/                   # Specs and design documents
 ├── PRODUCT.md              # Product definition, users, brand personality
 ├── DESIGN.md               # Design system specification (authoritative)
-└── docker-compose.yml      # All services (MySQL, Redis, Milvus, Neo4j, ES, MinIO, RabbitMQ)
+├── docker-compose.yml      # Base Docker config
+    ├── docker-compose.dev.yml  # Dev overrides
+    ├── docker-compose.prod.yml # Prod overrides
+    └── .env.docker             # Docker env template
 ```
 
 ## Design System
@@ -112,13 +115,13 @@ Ant Design is retained for complex components (DatePicker, Select dropdowns, For
 
 ```bash
 # Start all infrastructure services + backend + frontend
-docker-compose up -d
+docker compose up -d
 
 # View logs for a specific service
-docker-compose logs -f backend
+docker compose logs -f backend
 
 # Rebuild after dependency changes
-docker-compose up -d --build backend frontend
+docker compose up -d --build backend frontend
 ```
 
 ### Backend (Python / FastAPI)

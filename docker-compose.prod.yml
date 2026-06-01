@@ -1,0 +1,78 @@
+version: '3.8'
+
+# ============================================
+# 生产环境覆盖配置
+# ============================================
+# 使用方式:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# 此文件提供:
+#   - 资源限制 (CPU/内存)
+#   - 多副本 (celery-worker)
+#   - 生产级 uvicorn 配置 (多 worker)
+#
+# 前提:
+#   1. cp .env.docker .env  → 修改所有 <PRODUCTION> 标记的值
+#   2. 设置 ENVIRONMENT=production
+#   3. 配置 SSL 证书 (nginx/ssl/)
+# ============================================
+
+services:
+  backend:
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+    command: >
+      uvicorn app.main:app
+      --host 0.0.0.0 --port 8000
+      --proxy-headers
+      --workers 4
+      --timeout-keep-alive 65
+
+  celery-worker:
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+
+  celery-beat:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  frontend:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  nginx:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M

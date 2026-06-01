@@ -48,7 +48,13 @@ npm test -- --watch  # Watch mode
 ### Docker Compose
 
 ```bash
-# Full stack (all infra + app)
+# Development (hot reload)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+# Production (resource limits + replicas)
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+# Full stack (self-hosted infra)
 docker compose --profile full up -d
 
 # External DB mode (app + Neo4j only)
@@ -185,7 +191,7 @@ docker compose logs -f backend
 
 ## Infrastructure Notes
 
-- Docker Compose profiles: `full` (all self-hosted: MySQL + Redis + Milvus + ES + Neo4j) vs `external-db` (app + Neo4j only).
+- Docker Compose: base `docker-compose.yml` + environment-specific overrides (`docker-compose.dev.yml` for hot reload, `docker-compose.prod.yml` for resource limits). Profiles: `full` (all self-hosted) vs `external-db` (app + Neo4j only).
 - Services: 11 total — mysql, redis, milvus-standalone, neo4j, elasticsearch, backend, celery-worker, celery-beat, frontend, nginx.
 - Neo4j always starts regardless of profile.
 - Milvus and ES require significant memory; ensure ≥8GB available for `full` profile.

@@ -2,12 +2,18 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Install dependencies first (better layer caching)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy application code
 COPY . .
 
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+# Non-root user for security
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup \
+    && mkdir -p /app/uploads && chown -R appuser:appgroup /app/uploads
 USER appuser
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+EXPOSE 8000
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]
