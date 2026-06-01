@@ -93,10 +93,10 @@ cp .env.example .env
 
 ```bash
 # Полный запуск (вся инфраструктура + приложения)
-docker compose --profile full up -d
+docker-compose --profile full up -d
 
 # Или с внешней базой данных (только приложения + Neo4j)
-docker compose --profile external-db up -d
+docker-compose --profile external-db up -d
 ```
 
 ### 3. Доступ
@@ -340,10 +340,10 @@ vim .env  # Изменить все пункты с меткой <PRODUCTION>
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 
 # 3. Запуск
-docker compose --profile full up -d
+docker-compose --profile full up -d
 
 # 4. Просмотр логов
-docker compose logs -f backend
+docker-compose logs -f backend
 ```
 
 ### Настройка HTTPS в Nginx
@@ -360,7 +360,7 @@ nginx/ssl/key.pem
 Если MySQL / Redis / Milvus / ES предоставляются внешними сервисами, настройте соответствующие URL-адреса подключения в `.env`, затем:
 
 ```bash
-docker compose --profile external-db up -d
+docker-compose --profile external-db up -d
 ```
 
 ---

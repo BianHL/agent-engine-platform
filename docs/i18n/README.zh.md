@@ -93,10 +93,10 @@ cp .env.example .env
 
 ```bash
 # 完整启动（所有基础设施 + 应用服务）
-docker compose --profile full up -d
+docker-compose --profile full up -d
 
 # 或使用外部数据库（仅启动应用 + Neo4j）
-docker compose --profile external-db up -d
+docker-compose --profile external-db up -d
 ```
 
 ### 3. 访问
@@ -339,10 +339,10 @@ vim .env  # 修改所有 <PRODUCTION> 标记项
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 
 # 3. 启动
-docker compose --profile full up -d
+docker-compose --profile full up -d
 
 # 4. 查看日志
-docker compose logs -f backend
+docker-compose logs -f backend
 ```
 
 ### Nginx HTTPS 配置
@@ -359,7 +359,7 @@ nginx/ssl/key.pem
 如果 MySQL / Redis / Milvus / ES 由外部服务提供，在 `.env` 中配置对应的连接 URL，然后：
 
 ```bash
-docker compose --profile external-db up -d
+docker-compose --profile external-db up -d
 ```
 
 ---

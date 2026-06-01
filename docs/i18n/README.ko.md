@@ -93,10 +93,10 @@ cp .env.example .env
 
 ```bash
 # 전체 시작 (모든 인프라 + 애플리케이션 서비스)
-docker compose --profile full up -d
+docker-compose --profile full up -d
 
 # 또는 외부 데이터베이스 사용 (애플리케이션 + Neo4j만 시작)
-docker compose --profile external-db up -d
+docker-compose --profile external-db up -d
 ```
 
 ### 3. 접속
@@ -339,10 +339,10 @@ vim .env  # 모든 <PRODUCTION> 표시 항목 수정
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 
 # 3. 시작
-docker compose --profile full up -d
+docker-compose --profile full up -d
 
 # 4. 로그 확인
-docker compose logs -f backend
+docker-compose logs -f backend
 ```
 
 ### Nginx HTTPS 구성
@@ -359,7 +359,7 @@ nginx/ssl/key.pem
 MySQL / Redis / Milvus / ES가 외부 서비스에 의해 제공되는 경우, `.env`에서 해당 연결 URL을 구성한 후:
 
 ```bash
-docker compose --profile external-db up -d
+docker-compose --profile external-db up -d
 ```
 
 ---

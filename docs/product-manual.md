@@ -714,10 +714,10 @@ RAG请求 → 知识引擎 → 解析 → 分块 → 向量化 → 存储（Milv
 
 ```yaml
 # Celery Worker扩展
-docker compose up -d --scale celery-worker=3
+docker-compose up -d --scale celery-worker=3
 
 # 后端实例扩展（需要负载均衡器）
-docker compose up -d --scale backend=3
+docker-compose up -d --scale backend=3
 ```
 
 #### 垂直扩展
@@ -1261,17 +1261,17 @@ vim .env  # 修改所有<PRODUCTION>标记项
 
 ```bash
 # 全部启动（所有基础设施 + 应用服务）
-docker compose --profile full up -d
+docker-compose --profile full up -d
 
 # 或使用外部数据库（仅启动应用 + Neo4j）
-docker compose --profile external-db up -d
+docker-compose --profile external-db up -d
 ```
 
 #### 5. 验证部署
 
 ```bash
 # 查看容器状态
-docker compose ps
+docker-compose ps
 
 # 健康检查
 curl http://localhost/health
@@ -1320,14 +1320,14 @@ ES_HEAP_MAX=1g
 #### Celery Worker扩展
 
 ```bash
-docker compose up -d --scale celery-worker=3
+docker-compose up -d --scale celery-worker=3
 ```
 
 #### 多实例部署
 
 ```bash
 # 需要外部负载均衡器
-docker compose up -d --scale backend=3
+docker-compose up -d --scale backend=3
 ```
 
 ### 6.5 备份与恢复
@@ -1336,11 +1336,11 @@ docker compose up -d --scale backend=3
 
 ```bash
 # 备份
-docker compose exec mysql mysqldump -uroot -p"${MYSQL_ROOT_PASSWORD}" \
+docker-compose exec mysql mysqldump -uroot -p"${MYSQL_ROOT_PASSWORD}" \
   --single-transaction agent_engine > backup_$(date +%Y%m%d_%H%M%S).sql
 
 # 恢复
-docker compose exec -T mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" \
+docker-compose exec -T mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" \
   agent_engine < backup_20260601.sql
 ```
 
@@ -1348,21 +1348,21 @@ docker compose exec -T mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" \
 
 ```bash
 # 触发RDB快照
-docker compose exec redis redis-cli BGSAVE
+docker-compose exec redis redis-cli BGSAVE
 # 复制快照
-docker compose cp agent-engine-redis:/data/dump.rdb ./redis_backup_$(date +%Y%m%d).rdb
+docker-compose cp agent-engine-redis:/data/dump.rdb ./redis_backup_$(date +%Y%m%d).rdb
 ```
 
 #### Milvus备份
 
 ```bash
 # 备份volume
-docker compose stop milvus-standalone
+docker-compose stop milvus-standalone
 docker run --rm \
   -v agent-engine-platform_milvus_data:/data \
   -v $(pwd):/backup \
   alpine tar czf /backup/milvus_backup_$(date +%Y%m%d).tar.gz -C /data .
-docker compose start milvus-standalone
+docker-compose start milvus-standalone
 ```
 
 ---
@@ -1800,7 +1800,7 @@ SECRET_KEY=<新生成的密钥>
 ENCRYPTION_KEY=<新生成的密钥>
 
 # 重启服务
-docker compose restart backend celery-worker celery-beat
+docker-compose restart backend celery-worker celery-beat
 ```
 
 #### Milvus健康检查超时
@@ -1810,15 +1810,15 @@ docker compose restart backend celery-worker celery-beat
 **解决**:
 ```bash
 # 查看日志
-docker compose logs milvus-standalone --tail 50
+docker-compose logs milvus-standalone --tail 50
 
 # 健康检查
 curl http://localhost:9091/healthz
 
 # 如果持续失败，重置数据
-docker compose down
+docker-compose down
 docker volume rm agent-engine-platform_milvus_data
-docker compose up -d milvus-standalone
+docker-compose up -d milvus-standalone
 ```
 
 #### MySQL连接被拒
@@ -1828,13 +1828,13 @@ docker compose up -d milvus-standalone
 **解决**:
 ```bash
 # 检查MySQL状态
-docker compose exec mysql mysqladmin ping -h localhost -uroot -p"${MYSQL_ROOT_PASSWORD}"
+docker-compose exec mysql mysqladmin ping -h localhost -uroot -p"${MYSQL_ROOT_PASSWORD}"
 
 # 如果密码错误，重置
-docker compose down
+docker-compose down
 docker volume rm agent-engine-platform_mysql_data
 # 修改.env中的MYSQL_ROOT_PASSWORD和DATABASE_URL
-docker compose up -d
+docker-compose up -d
 ```
 
 #### Celery Worker无法连接Redis
@@ -1844,10 +1844,10 @@ docker compose up -d
 **解决**:
 ```bash
 # 检查Redis状态
-docker compose exec redis redis-cli -a "${REDIS_PASSWORD}" ping
+docker-compose exec redis redis-cli -a "${REDIS_PASSWORD}" ping
 
 # 查看Celery日志
-docker compose logs celery-worker --tail 20
+docker-compose logs celery-worker --tail 20
 
 # 确认REDIS_URL配置正确
 ```
@@ -1871,14 +1871,14 @@ elasticsearch:
 **解决**:
 ```bash
 # 检查Nginx配置
-docker compose exec nginx nginx -t
+docker-compose exec nginx nginx -t
 
 # 检查后端状态
-docker compose ps backend
+docker-compose ps backend
 curl http://localhost:8000/health
 
 # 查看Nginx日志
-docker compose logs nginx --tail 50
+docker-compose logs nginx --tail 50
 ```
 
 ### 10.2 性能问题
@@ -1893,14 +1893,14 @@ docker compose logs nginx --tail 50
 **排查步骤**:
 ```bash
 # 1. 检查数据库慢查询
-docker compose exec mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" \
+docker-compose exec mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" \
   -e "SHOW PROCESSLIST;"
 
 # 2. 检查Redis延迟
-docker compose exec redis redis-cli --latency
+docker-compose exec redis redis-cli --latency
 
 # 3. 检查后端日志
-docker compose logs backend --tail 100
+docker-compose logs backend --tail 100
 
 # 4. 检查系统资源
 docker stats --no-stream
@@ -1920,10 +1920,10 @@ DB_POOL_SIZE=10
 DB_MAX_OVERFLOW=20
 
 # 2. 清理Redis缓存
-docker compose exec redis redis-cli FLUSHDB
+docker-compose exec redis redis-cli FLUSHDB
 
 # 3. 重启服务
-docker compose restart
+docker-compose restart
 ```
 
 ### 10.3 数据问题
@@ -1942,7 +1942,7 @@ curl -H "Authorization: Bearer $TOKEN" \
   http://localhost:8000/api/v1/knowledge/{kb_id}/documents
 
 # 2. 检查Milvus集合
-docker compose exec milvus-standalone curl \
+docker-compose exec milvus-standalone curl \
   http://localhost:9091/collections
 
 # 3. 测试检索
@@ -1979,26 +1979,26 @@ curl http://localhost:8000/health
 
 ```bash
 # 后端日志
-docker compose logs -f backend --tail 100
+docker-compose logs -f backend --tail 100
 
 # Celery日志
-docker compose logs -f celery-worker --tail 100
+docker-compose logs -f celery-worker --tail 100
 
 # 前端日志
-docker compose logs -f frontend --tail 100
+docker-compose logs -f frontend --tail 100
 ```
 
 #### 系统日志
 
 ```bash
 # Nginx日志
-docker compose logs -f nginx --tail 100
+docker-compose logs -f nginx --tail 100
 
 # MySQL日志
-docker compose logs -f mysql --tail 100
+docker-compose logs -f mysql --tail 100
 
 # Redis日志
-docker compose logs -f redis --tail 100
+docker-compose logs -f redis --tail 100
 ```
 
 ### 10.5 联系支持

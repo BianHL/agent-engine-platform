@@ -7,13 +7,13 @@ version: '3.8'
 # 通过 override 文件实现环境差异化:
 #
 #   开发环境 (热重载):
-#     docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#     docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
 #
 #   生产环境 (资源限制):
-#     docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#     docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 #
 #   快速启动 (仅基础设施 + 应用):
-#     docker compose up -d
+#     docker-compose up -d
 #
 # 基础设施 profile:
 #   - full        : 所有服务自托管 (MySQL + Redis + Milvus + ES)

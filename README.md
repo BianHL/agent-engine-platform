@@ -96,19 +96,19 @@ cp .env.docker .env      # Docker 部署 (使用 Docker 服务名)
 
 ```bash
 # 开发环境 (热重载)
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
 
 # 生产环境 (资源限制 + 多副本)
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 # 快速启动 (基础配置)
-docker compose up -d
+docker-compose up -d
 
 # 全量启动 (自托管基础设施)
-docker compose --profile full up -d
+docker-compose --profile full up -d
 
 # 外部数据库模式 (仅 Neo4j + 应用)
-docker compose --profile external-db up -d
+docker-compose --profile external-db up -d
 ```
 
 ### 3. Access
@@ -341,10 +341,10 @@ vim .env  # 修改所有 <PRODUCTION> 标记的项目
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 
 # 3. 启动 (生产模式)
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 # 4. 查看日志
-docker compose logs -f backend
+docker-compose logs -f backend
 ```
 
 ### Nginx HTTPS 配置
@@ -361,7 +361,7 @@ nginx/ssl/key.pem
 如果 MySQL / Redis / Milvus / ES 由外部服务提供，在 `.env` 中配置连接 URL，然后:
 
 ```bash
-docker compose --profile external-db up -d
+docker-compose --profile external-db up -d
 ```
 ```
 nginx/ssl/cert.pem
@@ -373,7 +373,7 @@ nginx/ssl/key.pem
 If MySQL / Redis / Milvus / ES are provided by external services, configure connection URLs in `.env`, then:
 
 ```bash
-docker compose --profile external-db up -d
+docker-compose --profile external-db up -d
 ```
 
 ---

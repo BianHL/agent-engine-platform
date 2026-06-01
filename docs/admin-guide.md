@@ -59,7 +59,7 @@ ENCRYPTION_KEY=<fernet-key>    # 数据加密密钥
 1. 修改 `.env` 文件
 2. 重启相关服务：
    ```bash
-   docker compose restart backend celery-worker celery-beat frontend
+   docker-compose restart backend celery-worker celery-beat frontend
    ```
 3. 验证配置生效：
    ```bash
@@ -72,13 +72,13 @@ ENCRYPTION_KEY=<fernet-key>    # 数据加密密钥
 
 ```bash
 # 查看所有服务状态
-docker compose ps
+docker-compose ps
 
 # 查看特定服务状态
-docker compose ps backend
+docker-compose ps backend
 
 # 查看服务日志
-docker compose logs -f backend --tail 100
+docker-compose logs -f backend --tail 100
 
 # 查看资源使用
 docker stats --no-stream
@@ -88,26 +88,26 @@ docker stats --no-stream
 
 ```bash
 # 启动所有服务
-docker compose up -d
+docker-compose up -d
 
 # 停止所有服务
-docker compose down
+docker-compose down
 
 # 重启单个服务
-docker compose restart backend
+docker-compose restart backend
 
 # 重启所有服务
-docker compose restart
+docker-compose restart
 ```
 
 #### 服务扩展
 
 ```bash
 # 扩展Celery Worker
-docker compose up -d --scale celery-worker=3
+docker-compose up -d --scale celery-worker=3
 
 # 扩展后端实例（需要负载均衡器）
-docker compose up -d --scale backend=3
+docker-compose up -d --scale backend=3
 ```
 
 ### 1.3 数据库管理
@@ -116,7 +116,7 @@ docker compose up -d --scale backend=3
 
 **连接数据库**:
 ```bash
-docker compose exec mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" agent_engine
+docker-compose exec mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" agent_engine
 ```
 
 **查看数据库状态**:
@@ -134,23 +134,23 @@ SELECT COUNT(*) FROM table_name;
 **数据库迁移**:
 ```bash
 # 查看当前版本
-docker compose exec backend alembic current
+docker-compose exec backend alembic current
 
 # 升级到最新版本
-docker compose exec backend alembic upgrade head
+docker-compose exec backend alembic upgrade head
 
 # 生成新迁移
-docker compose exec backend alembic revision --autogenerate -m "description"
+docker-compose exec backend alembic revision --autogenerate -m "description"
 
 # 回滚迁移
-docker compose exec backend alembic downgrade -1
+docker-compose exec backend alembic downgrade -1
 ```
 
 #### Redis管理
 
 **连接Redis**:
 ```bash
-docker compose exec redis redis-cli -a "${REDIS_PASSWORD}"
+docker-compose exec redis redis-cli -a "${REDIS_PASSWORD}"
 ```
 
 **常用命令**:
@@ -214,16 +214,16 @@ MATCH ()-[r]->() RETURN type(r), count(r)
 
 ```bash
 # 实时查看后端日志
-docker compose logs -f backend
+docker-compose logs -f backend
 
 # 查看最近100行
-docker compose logs --tail 100 backend
+docker-compose logs --tail 100 backend
 
 # 查看错误日志
-docker compose logs backend | grep ERROR
+docker-compose logs backend | grep ERROR
 
 # 查看特定时间段日志
-docker compose logs --since "2026-06-01T10:00:00" backend
+docker-compose logs --since "2026-06-01T10:00:00" backend
 ```
 
 #### 日志轮转
@@ -648,10 +648,10 @@ curl http://localhost:8000/health
 
 ```bash
 # 检查所有服务
-docker compose ps
+docker-compose ps
 
 # 检查特定服务
-docker compose ps backend
+docker-compose ps backend
 
 # 检查资源使用
 docker stats --no-stream
@@ -679,7 +679,7 @@ netstat -tulpn
 curl -o /dev/null -s -w "Time: %{time_total}s\n" http://localhost:8000/health
 
 # 查看数据库连接数
-docker compose exec mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" \
+docker-compose exec mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" \
   -e "SHOW STATUS LIKE 'Threads_connected';"
 ```
 
@@ -689,23 +689,23 @@ docker compose exec mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" \
 
 ```bash
 # 监控所有服务日志
-docker compose logs -f
+docker-compose logs -f
 
 # 监控特定服务日志
-docker compose logs -f backend
+docker-compose logs -f backend
 
 # 监控错误日志
-docker compose logs -f | grep ERROR
+docker-compose logs -f | grep ERROR
 ```
 
 #### 日志分析
 
 ```bash
 # 统计错误数量
-docker compose logs backend | grep ERROR | wc -l
+docker-compose logs backend | grep ERROR | wc -l
 
 # 查看最近错误
-docker compose logs --tail 100 backend | grep ERROR
+docker-compose logs --tail 100 backend | grep ERROR
 ```
 
 ### 6.4 告警配置
@@ -714,7 +714,7 @@ docker compose logs --tail 100 backend | grep ERROR
 
 ```bash
 # 监控错误日志并发送告警
-docker compose logs -f backend | grep ERROR | while read line; do
+docker-compose logs -f backend | grep ERROR | while read line; do
   # 发送告警通知
   curl -X POST "https://hooks.slack.com/..." \
     -H "Content-Type: application/json" \
@@ -837,32 +837,32 @@ curl -X GET "http://localhost:8000/api/v1/audit" \
 
 ```bash
 # 全量备份
-docker compose exec mysql mysqldump -uroot -p"${MYSQL_ROOT_PASSWORD}" \
+docker-compose exec mysql mysqldump -uroot -p"${MYSQL_ROOT_PASSWORD}" \
   --single-transaction agent_engine > backup_$(date +%Y%m%d_%H%M%S).sql
 
 # 压缩备份
-docker compose exec mysql mysqldump -uroot -p"${MYSQL_ROOT_PASSWORD}" \
+docker-compose exec mysql mysqldump -uroot -p"${MYSQL_ROOT_PASSWORD}" \
   --single-transaction agent_engine | gzip > backup_$(date +%Y%m%d_%H%M%S).sql.gz
 
 # 定时备份（每天凌晨2点）
-echo "0 2 * * * cd /opt/agent-engine-platform && docker compose exec mysql mysqldump -uroot -p\"\${MYSQL_ROOT_PASSWORD}\" --single-transaction agent_engine | gzip > /backup/mysql_$(date +\%Y\%m\%d).sql.gz" | crontab -
+echo "0 2 * * * cd /opt/agent-engine-platform && docker-compose exec mysql mysqldump -uroot -p\"\${MYSQL_ROOT_PASSWORD}\" --single-transaction agent_engine | gzip > /backup/mysql_$(date +\%Y\%m\%d).sql.gz" | crontab -
 ```
 
 #### Redis备份
 
 ```bash
 # 触发RDB快照
-docker compose exec redis redis-cli BGSAVE
+docker-compose exec redis redis-cli BGSAVE
 
 # 复制快照
-docker compose cp agent-engine-redis:/data/dump.rdb ./redis_backup_$(date +%Y%m%d).rdb
+docker-compose cp agent-engine-redis:/data/dump.rdb ./redis_backup_$(date +%Y%m%d).rdb
 ```
 
 #### Milvus备份
 
 ```bash
 # 停止服务
-docker compose stop milvus-standalone
+docker-compose stop milvus-standalone
 
 # 备份数据
 docker run --rm \
@@ -871,15 +871,15 @@ docker run --rm \
   alpine tar czf /backup/milvus_backup_$(date +%Y%m%d).tar.gz -C /data .
 
 # 启动服务
-docker compose start milvus-standalone
+docker-compose start milvus-standalone
 ```
 
 #### Neo4j备份
 
 ```bash
 # 备份数据库
-docker compose exec neo4j neo4j-admin database dump neo4j --to-path=/tmp/
-docker compose cp agent-engine-neo4j:/tmp/neo4j.dump ./neo4j_backup_$(date +%Y%m%d).dump
+docker-compose exec neo4j neo4j-admin database dump neo4j --to-path=/tmp/
+docker-compose cp agent-engine-neo4j:/tmp/neo4j.dump ./neo4j_backup_$(date +%Y%m%d).dump
 ```
 
 #### 完整备份脚本
@@ -895,28 +895,28 @@ echo "开始备份..."
 
 # MySQL备份
 echo "备份MySQL..."
-docker compose exec mysql mysqldump -uroot -p"${MYSQL_ROOT_PASSWORD}" \
+docker-compose exec mysql mysqldump -uroot -p"${MYSQL_ROOT_PASSWORD}" \
   --single-transaction agent_engine | gzip > $BACKUP_DIR/mysql.sql.gz
 
 # Redis备份
 echo "备份Redis..."
-docker compose exec redis redis-cli BGSAVE
+docker-compose exec redis redis-cli BGSAVE
 sleep 5
-docker compose cp agent-engine-redis:/data/dump.rdb $BACKUP_DIR/redis.rdb
+docker-compose cp agent-engine-redis:/data/dump.rdb $BACKUP_DIR/redis.rdb
 
 # Milvus备份
 echo "备份Milvus..."
-docker compose stop milvus-standalone
+docker-compose stop milvus-standalone
 docker run --rm \
   -v agent-engine-platform_milvus_data:/data \
   -v $BACKUP_DIR:/backup \
   alpine tar czf /backup/milvus.tar.gz -C /data .
-docker compose start milvus-standalone
+docker-compose start milvus-standalone
 
 # Neo4j备份
 echo "备份Neo4j..."
-docker compose exec neo4j neo4j-admin database dump neo4j --to-path=/tmp/
-docker compose cp agent-engine-neo4j:/tmp/neo4j.dump $BACKUP_DIR/neo4j.dump
+docker-compose exec neo4j neo4j-admin database dump neo4j --to-path=/tmp/
+docker-compose cp agent-engine-neo4j:/tmp/neo4j.dump $BACKUP_DIR/neo4j.dump
 
 echo "备份完成: $BACKUP_DIR"
 ```
@@ -927,11 +927,11 @@ echo "备份完成: $BACKUP_DIR"
 
 ```bash
 # 恢复备份
-docker compose exec -T mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" \
+docker-compose exec -T mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" \
   agent_engine < backup_20260601.sql
 
 # 恢复压缩备份
-gunzip < backup_20260601.sql.gz | docker compose exec -T mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" \
+gunzip < backup_20260601.sql.gz | docker-compose exec -T mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" \
   agent_engine
 ```
 
@@ -939,20 +939,20 @@ gunzip < backup_20260601.sql.gz | docker compose exec -T mysql mysql -uroot -p"$
 
 ```bash
 # 停止Redis
-docker compose stop redis
+docker-compose stop redis
 
 # 替换数据文件
-docker compose cp redis_backup.rdb agent-engine-redis:/data/dump.rdb
+docker-compose cp redis_backup.rdb agent-engine-redis:/data/dump.rdb
 
 # 启动Redis
-docker compose start redis
+docker-compose start redis
 ```
 
 #### Milvus恢复
 
 ```bash
 # 停止Milvus
-docker compose stop milvus-standalone
+docker-compose stop milvus-standalone
 
 # 恢复数据
 docker run --rm \
@@ -961,21 +961,21 @@ docker run --rm \
   alpine tar xzf /backup/milvus_backup.tar.gz -C /data
 
 # 启动Milvus
-docker compose start milvus-standalone
+docker-compose start milvus-standalone
 ```
 
 #### Neo4j恢复
 
 ```bash
 # 停止Neo4j
-docker compose stop neo4j
+docker-compose stop neo4j
 
 # 恢复数据库
-docker compose cp neo4j_backup.dump agent-engine-neo4j:/tmp/
-docker compose exec neo4j neo4j-admin database load neo4j --from-path=/tmp/
+docker-compose cp neo4j_backup.dump agent-engine-neo4j:/tmp/
+docker-compose exec neo4j neo4j-admin database load neo4j --from-path=/tmp/
 
 # 启动Neo4j
-docker compose start neo4j
+docker-compose start neo4j
 ```
 
 ### 8.3 备份策略
@@ -1027,11 +1027,11 @@ DB_POOL_RECYCLE=3600
 **内存优化**:
 ```bash
 # 查看内存使用
-docker compose exec redis redis-cli INFO memory
+docker-compose exec redis redis-cli INFO memory
 
 # 配置内存策略
-docker compose exec redis redis-cli CONFIG SET maxmemory 2gb
-docker compose exec redis redis-cli CONFIG SET maxmemory-policy allkeys-lru
+docker-compose exec redis redis-cli CONFIG SET maxmemory 2gb
+docker-compose exec redis redis-cli CONFIG SET maxmemory-policy allkeys-lru
 ```
 
 ### 9.2 应用优化
@@ -1125,13 +1125,13 @@ echo "开始部署..."
 git pull origin main
 
 # 构建镜像
-docker compose build
+docker-compose build
 
 # 停止旧服务
-docker compose down
+docker-compose down
 
 # 启动新服务
-docker compose up -d
+docker-compose up -d
 
 # 等待服务就绪
 sleep 30
@@ -1151,7 +1151,7 @@ echo "部署完成"
 # 检查服务状态
 check_service() {
   local service=$1
-  local status=$(docker compose ps --format "table {{.Name}}\t{{.Status}}" | grep $service | awk '{print $2}')
+  local status=$(docker-compose ps --format "table {{.Name}}\t{{.Status}}" | grep $service | awk '{print $2}')
   
   if [[ $status != *"Up"* ]]; then
     echo "警告: $service 未运行"
@@ -1215,7 +1215,7 @@ jobs:
           script: |
             cd /opt/agent-engine-platform
             git pull
-            docker compose up -d --build
+            docker-compose up -d --build
 ```
 
 ### 10.3 容器编排
@@ -1283,15 +1283,15 @@ spec:
 
 ```bash
 # 服务管理
-docker compose up -d          # 启动所有服务
-docker compose down           # 停止所有服务
-docker compose restart        # 重启所有服务
-docker compose ps             # 查看服务状态
-docker compose logs -f        # 查看日志
+docker-compose up -d          # 启动所有服务
+docker-compose down           # 停止所有服务
+docker-compose restart        # 重启所有服务
+docker-compose ps             # 查看服务状态
+docker-compose logs -f        # 查看日志
 
 # 数据库操作
-docker compose exec mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" agent_engine
-docker compose exec redis redis-cli -a "${REDIS_PASSWORD}"
+docker-compose exec mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" agent_engine
+docker-compose exec redis redis-cli -a "${REDIS_PASSWORD}"
 
 # 备份恢复
 ./backup.sh                   # 执行备份
@@ -1312,8 +1312,8 @@ curl http://localhost:8000/health
 
 ### C. 故障排查流程
 
-1. **检查服务状态**: `docker compose ps`
-2. **查看服务日志**: `docker compose logs -f backend`
+1. **检查服务状态**: `docker-compose ps`
+2. **查看服务日志**: `docker-compose logs -f backend`
 3. **检查健康状态**: `curl http://localhost:8000/health`
 4. **检查资源使用**: `docker stats --no-stream`
 5. **检查网络连接**: `ping localhost`

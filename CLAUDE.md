@@ -49,22 +49,22 @@ npm test -- --watch  # Watch mode
 
 ```bash
 # Development (hot reload)
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
 
 # Production (resource limits + replicas)
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 # Full stack (self-hosted infra)
-docker compose --profile full up -d
+docker-compose --profile full up -d
 
 # External DB mode (app + Neo4j only)
-docker compose --profile external-db up -d
+docker-compose --profile external-db up -d
 
 # Rebuild after dependency changes
-docker compose up -d --build backend frontend
+docker-compose up -d --build backend frontend
 
 # View logs
-docker compose logs -f backend
+docker-compose logs -f backend
 ```
 
 ## Architecture

@@ -93,10 +93,10 @@ cp .env.example .env
 
 ```bash
 # Inicio completo (toda la infraestructura + servicios de aplicación)
-docker compose --profile full up -d
+docker-compose --profile full up -d
 
 # O usar base de datos externa (solo iniciar aplicación + Neo4j)
-docker compose --profile external-db up -d
+docker-compose --profile external-db up -d
 ```
 
 ### 3. Acceder
@@ -342,10 +342,10 @@ vim .env  # Modificar todos los elementos marcados con <PRODUCTION>
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 
 # 3. Iniciar
-docker compose --profile full up -d
+docker-compose --profile full up -d
 
 # 4. Ver registros
-docker compose logs -f backend
+docker-compose logs -f backend
 ```
 
 ### Configuración HTTPS de Nginx
@@ -362,7 +362,7 @@ nginx/ssl/key.pem
 Si MySQL / Redis / Milvus / ES son proporcionados por servicios externos, configure las URL de conexión correspondientes en `.env`, luego:
 
 ```bash
-docker compose --profile external-db up -d
+docker-compose --profile external-db up -d
 ```
 
 ---

@@ -7,7 +7,7 @@
 | 组件 | 最低版本 | 说明 |
 |------|---------|------|
 | Docker | 24.0+ | 容器运行时 |
-| Docker Compose | v2.20+ | `docker compose` (V2 插件) |
+| Docker Compose | v2.20+ | `docker-compose` (V1 standalone) 或 `docker compose` (V2 插件) |
 | 系统内存 | 16 GB | Milvus + ES + Neo4j 共需约 8 GB |
 | 磁盘 | 40 GB | Docker 镜像 + 数据卷 |
 | CPU | 4 核 | 推荐 8 核 |
@@ -119,7 +119,7 @@ CORS_ORIGINS=["http://<服务器IP或域名>","http://localhost:3000"]
 ### 2.4 构建并启动
 
 ```bash
-docker compose up -d --build
+docker-compose up -d --build
 ```
 
 首次启动约需 3-5 分钟（拉取镜像 + MySQL 初始化 + Milvus 初始化）。
@@ -128,10 +128,10 @@ docker compose up -d --build
 
 ```bash
 # 查看容器状态（等待全部 healthy 或 running）
-docker compose ps
+docker-compose ps
 
 # 持续观察直到所有服务就绪
-watch -n 5 'docker compose ps --format "table {{.Name}}\t{{.Status}}"'
+watch -n 5 'docker-compose ps --format "table {{.Name}}\t{{.Status}}"'
 ```
 
 预期全部服务 Up：
@@ -173,7 +173,7 @@ curl -s http://localhost/health | python3 -m json.tool
 ### 2.7 验证数据库初始化
 
 ```bash
-docker compose exec mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" agent_engine \
+docker-compose exec mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" agent_engine \
   -e "SELECT COUNT(*) AS table_count FROM information_schema.tables WHERE table_schema='agent_engine';"
 ```
 
@@ -248,17 +248,17 @@ curl -s -X POST http://localhost/api/v1/chat/completions \
 
 ```bash
 # 停止所有服务
-docker compose down
+docker-compose down
 
 # 停止并清除数据卷（⚠️ 不可恢复）
-docker compose down -v
+docker-compose down -v
 
 # 重启单个服务
-docker compose restart backend
+docker-compose restart backend
 
 # 代码更新后重新构建
-docker compose up -d --build backend celery-worker celery-beat frontend
-docker compose restart nginx
+docker-compose up -d --build backend celery-worker celery-beat frontend
+docker-compose restart nginx
 
 # 查看资源使用
 docker stats --no-stream
@@ -267,7 +267,7 @@ docker stats --no-stream
 ### 4.2 仅启动基础设施（开发模式）
 
 ```bash
-docker compose up -d mysql redis milvus-standalone neo4j elasticsearch minio rabbitmq
+docker-compose up -d mysql redis milvus-standalone neo4j elasticsearch minio rabbitmq
 ```
 
 然后本地启动 backend：
@@ -285,13 +285,13 @@ uvicorn app.main:app --reload --port 8000
 open http://localhost:15672  # guest / <RABBITMQ_PASSWORD>
 
 # Celery Worker 日志
-docker compose logs -f celery-worker --tail 50
+docker-compose logs -f celery-worker --tail 50
 ```
 
 ### 4.4 扩容 Celery Worker
 
 ```bash
-docker compose up -d --scale celery-worker=3
+docker-compose up -d --scale celery-worker=3
 ```
 
 ---
@@ -302,11 +302,11 @@ docker compose up -d --scale celery-worker=3
 
 ```bash
 # 备份
-docker compose exec mysql mysqldump -uroot -p"${MYSQL_ROOT_PASSWORD}" \
+docker-compose exec mysql mysqldump -uroot -p"${MYSQL_ROOT_PASSWORD}" \
   --single-transaction agent_engine > backup_$(date +%Y%m%d_%H%M%S).sql
 
 # 恢复
-docker compose exec -T mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" \
+docker-compose exec -T mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" \
   agent_engine < backup_20260527.sql
 ```
 
@@ -314,28 +314,28 @@ docker compose exec -T mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" \
 
 ```bash
 # 触发 RDB 快照
-docker compose exec redis redis-cli BGSAVE
+docker-compose exec redis redis-cli BGSAVE
 # 复制快照
-docker compose cp agent-engine-redis:/data/dump.rdb ./redis_backup_$(date +%Y%m%d).rdb
+docker-compose cp agent-engine-redis:/data/dump.rdb ./redis_backup_$(date +%Y%m%d).rdb
 ```
 
 ### 5.3 Milvus
 
 ```bash
 # 备份 volume（停服后执行更安全）
-docker compose stop milvus-standalone
+docker-compose stop milvus-standalone
 docker run --rm \
   -v agent-engine-platform_milvus_data:/data \
   -v $(pwd):/backup \
   alpine tar czf /backup/milvus_backup_$(date +%Y%m%d).tar.gz -C /data .
-docker compose start milvus-standalone
+docker-compose start milvus-standalone
 ```
 
 ### 5.4 Neo4j
 
 ```bash
-docker compose exec neo4j neo4j-admin database dump neo4j --to-path=/tmp/
-docker compose cp agent-engine-neo4j:/tmp/neo4j.dump ./neo4j_backup_$(date +%Y%m%d).dump
+docker-compose exec neo4j neo4j-admin database dump neo4j --to-path=/tmp/
+docker-compose cp agent-engine-neo4j:/tmp/neo4j.dump ./neo4j_backup_$(date +%Y%m%d).dump
 ```
 
 ---
@@ -345,35 +345,35 @@ docker compose cp agent-engine-neo4j:/tmp/neo4j.dump ./neo4j_backup_$(date +%Y%m
 ### 6.1 Backend 启动失败: "SECRET_KEY must be changed"
 
 `.env` 中 `SECRET_KEY` 或 `ENCRYPTION_KEY` 仍为默认值 `change-me-in-production`。
-按步骤 2.2 生成新值并更新 `.env`，然后 `docker compose restart backend celery-worker celery-beat`。
+按步骤 2.2 生成新值并更新 `.env`，然后 `docker-compose restart backend celery-worker celery-beat`。
 
 ### 6.2 Milvus 健康检查超时
 
 Milvus 首次启动需 90 秒以上。如果持续失败：
 
 ```bash
-docker compose logs milvus-standalone --tail 50
+docker-compose logs milvus-standalone --tail 50
 curl http://localhost:9091/healthz
 
 # 重置 Milvus 数据
-docker compose down
+docker-compose down
 docker volume rm agent-engine-platform_milvus_data
-docker compose up -d milvus-standalone
+docker-compose up -d milvus-standalone
 ```
 
 ### 6.3 MySQL 连接被拒
 
 ```bash
-docker compose exec mysql mysqladmin ping -h localhost -uroot -p"${MYSQL_ROOT_PASSWORD}"
+docker-compose exec mysql mysqladmin ping -h localhost -uroot -p"${MYSQL_ROOT_PASSWORD}"
 ```
 
 如果密码不对，重置：
 
 ```bash
-docker compose down
+docker-compose down
 docker volume rm agent-engine-platform_mysql_data
 # 修改 .env 中的 MYSQL_ROOT_PASSWORD 和 DATABASE_URL
-docker compose up -d
+docker-compose up -d
 ```
 
 ### 6.4 Celery Worker 无法连接 RabbitMQ
@@ -381,8 +381,8 @@ docker compose up -d
 检查 `CELERY_BROKER_URL` 中的用户名密码是否与 `RABBITMQ_USER`/`RABBITMQ_PASSWORD` 一致。
 
 ```bash
-docker compose exec rabbitmq rabbitmq-diagnostics check_running
-docker compose logs celery-worker --tail 20
+docker-compose exec rabbitmq rabbitmq-diagnostics check_running
+docker-compose logs celery-worker --tail 20
 ```
 
 ### 6.5 Elasticsearch 内存不足 (OOM)
@@ -399,10 +399,10 @@ elasticsearch:
 
 ```bash
 # 检查 Nginx 配置
-docker compose exec nginx nginx -t
+docker-compose exec nginx nginx -t
 
 # 检查 Backend
-docker compose ps backend
+docker-compose ps backend
 curl http://localhost:8000/health
 ```
 

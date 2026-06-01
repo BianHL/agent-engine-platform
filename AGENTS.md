@@ -115,13 +115,13 @@ Ant Design is retained for complex components (DatePicker, Select dropdowns, For
 
 ```bash
 # Start all infrastructure services + backend + frontend
-docker compose up -d
+docker-compose up -d
 
 # View logs for a specific service
-docker compose logs -f backend
+docker-compose logs -f backend
 
 # Rebuild after dependency changes
-docker compose up -d --build backend frontend
+docker-compose up -d --build backend frontend
 ```
 
 ### Backend (Python / FastAPI)

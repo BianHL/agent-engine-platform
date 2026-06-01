@@ -4,7 +4,7 @@ version: '3.8'
 # 开发环境覆盖配置
 # ============================================
 # 使用方式:
-#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#   docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
 #
 # 此文件提供:
 #   - 源码 volume mount (热重载)
