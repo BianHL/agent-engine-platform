@@ -1,0 +1,20 @@
+from app.engines.model_engine.base import LLMModelConfig, EmbeddingModelConfig, LLMCapability, EmbeddingCapability
+
+PRESET_LLM_MODELS = [
+    LLMModelConfig(provider="openai", model_name="gpt-4o", display_name="GPT-4o", description="OpenAI多模态旗舰模型", capabilities=[LLMCapability.CHAT, LLMCapability.FUNCTION_CALLING, LLMCapability.VISION, LLMCapability.CODE], context_window=128000, max_output_tokens=16384, input_price=2.5, output_price=10.0),
+    LLMModelConfig(provider="openai", model_name="gpt-4.1", display_name="GPT-4.1", description="OpenAI最新旗舰模型（2025）", capabilities=[LLMCapability.CHAT, LLMCapability.FUNCTION_CALLING, LLMCapability.VISION, LLMCapability.CODE], context_window=1047576, max_output_tokens=32768, input_price=2.0, output_price=8.0),
+    LLMModelConfig(provider="openai", model_name="gpt-4o-mini", display_name="GPT-4o Mini", description="性价比最高的小模型", capabilities=[LLMCapability.CHAT, LLMCapability.FUNCTION_CALLING], context_window=128000, max_output_tokens=16384, input_price=0.15, output_price=0.6),
+    LLMModelConfig(provider="anthropic", model_name="claude-sonnet-4-20250514", display_name="Claude Sonnet 4", description="Anthropic最新旗舰模型（2025）", capabilities=[LLMCapability.CHAT, LLMCapability.FUNCTION_CALLING, LLMCapability.VISION, LLMCapability.CODE], context_window=200000, max_output_tokens=16384, input_price=3.0, output_price=15.0),
+    LLMModelConfig(provider="anthropic", model_name="claude-3-5-sonnet-20241022", display_name="Claude 3.5 Sonnet", description="Anthropic高性价比模型", capabilities=[LLMCapability.CHAT, LLMCapability.FUNCTION_CALLING, LLMCapability.VISION, LLMCapability.CODE], context_window=200000, max_output_tokens=8192, input_price=3.0, output_price=15.0),
+    LLMModelConfig(provider="deepseek", model_name="deepseek-chat", display_name="DeepSeek V3", description="DeepSeek通用对话模型", capabilities=[LLMCapability.CHAT, LLMCapability.FUNCTION_CALLING, LLMCapability.CODE, LLMCapability.CHINESE], context_window=64000, max_output_tokens=8192, input_price=0.14, output_price=0.28),
+    LLMModelConfig(provider="deepseek", model_name="deepseek-reasoner", display_name="DeepSeek R1", description="DeepSeek推理模型", capabilities=[LLMCapability.CHAT, LLMCapability.REASONING, LLMCapability.CODE, LLMCapability.CHINESE], context_window=64000, max_output_tokens=8192, input_price=0.55, output_price=2.19),
+    LLMModelConfig(provider="custom_openai", model_name="qwen-max", display_name="通义千问Max", description="阿里云最强大的模型", capabilities=[LLMCapability.CHAT, LLMCapability.FUNCTION_CALLING, LLMCapability.VISION, LLMCapability.CHINESE], context_window=32000, max_output_tokens=8192, input_price=0.02, output_price=0.06),
+    LLMModelConfig(provider="custom_openai", model_name="qwen-plus", display_name="通义千问Plus", description="阿里云高性价比模型", capabilities=[LLMCapability.CHAT, LLMCapability.FUNCTION_CALLING, LLMCapability.CHINESE], context_window=131072, max_output_tokens=8192, input_price=0.004, output_price=0.012),
+]
+
+PRESET_EMBEDDING_MODELS = [
+    EmbeddingModelConfig(provider="openai", model_name="text-embedding-3-large", display_name="OpenAI Embedding Large", description="OpenAI最强嵌入模型", capabilities=[EmbeddingCapability.TEXT, EmbeddingCapability.MULTILINGUAL], dimensions=3072, max_input_tokens=8191, price_per_million=0.13),
+    EmbeddingModelConfig(provider="openai", model_name="text-embedding-3-small", display_name="OpenAI Embedding Small", description="OpenAI轻量嵌入模型", capabilities=[EmbeddingCapability.TEXT], dimensions=1536, max_input_tokens=8191, price_per_million=0.02),
+    EmbeddingModelConfig(provider="jina", model_name="jina-embeddings-v3", display_name="Jina Embeddings V3", description="多语言嵌入模型", capabilities=[EmbeddingCapability.TEXT, EmbeddingCapability.MULTILINGUAL], dimensions=1024, max_input_tokens=8192, price_per_million=0.02),
+    EmbeddingModelConfig(provider="bge", model_name="bge-large-zh-v1.5", display_name="BGE Large 中文", description="智源中文嵌入模型", capabilities=[EmbeddingCapability.TEXT, EmbeddingCapability.CHINESE], dimensions=1024, max_input_tokens=512, price_per_million=0.0),
+]

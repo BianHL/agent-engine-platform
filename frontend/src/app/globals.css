@@ -1,0 +1,387 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ───────────────────────────────────────────────────────────── */
+/* CSS Custom Properties (Design Tokens) */
+/* ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* Colors */
+  --ae-bg: #f5efe6;
+  --ae-bg-secondary: #ece3d6;
+  --ae-panel: rgba(255, 255, 255, 0.74);
+  --ae-panel-strong: rgba(255, 255, 255, 0.92);
+  --ae-text: #26221e;
+  --ae-muted: rgba(38, 34, 30, 0.58);
+  --ae-line: rgba(86, 68, 54, 0.10);
+  --ae-line-strong: rgba(86, 68, 54, 0.18);
+  --ae-shadow: 0 18px 50px rgba(74, 60, 48, 0.10);
+  --ae-shadow-soft: 0 12px 28px rgba(74, 60, 48, 0.06);
+  --ae-accent-olive: #7a8a6a;
+  --ae-accent-gold: #c29a63;
+  --ae-accent-sage: #9aaa88;
+  --ae-success: #6f9b7c;
+  --ae-warning: #d0a45d;
+  --ae-danger: #c47a6e;
+  --ae-overlay: rgba(0, 0, 0, 0.35);
+
+  /* Radius */
+  --ae-radius-sm: 12px;
+  --ae-radius-md: 16px;
+  --ae-radius-lg: 22px;
+  --ae-radius-xl: 30px;
+  --ae-radius-full: 999px;
+
+  /* Motion */
+  --ae-motion-ease: ease;
+  --ae-motion-ease-smooth: cubic-bezier(.2, 1, .2, 1);
+  --ae-motion-duration-fast: 180ms;
+  --ae-motion-duration-normal: 200ms;
+  --ae-motion-duration-slow: 300ms;
+
+  /* Layout */
+  --ae-sidebar-width: 280px;
+  --ae-header-height: 64px;
+  --ae-content-padding: 28px;
+
+  /* Typography */
+  --ae-font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --ae-font-family-serif: ui-serif, Georgia, Cambria, 'Times New Roman', serif;
+  --ae-font-family-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* ───────────────────────────────────────────────────────────── */
+/* Base Reset & Typography */
+/* ───────────────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--ae-font-family);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ae-text);
+  background-color: var(--ae-bg);
+  overflow-x: hidden;
+}
+
+/* Smooth scrolling for anchor links */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────── */
+/* Page Background — Warm Parchment with Gradients */
+/* ───────────────────────────────────────────────────────────── */
+
+body {
+  background:
+    radial-gradient(circle at 18% 14%, rgba(122, 138, 106, 0.18), transparent 24%),
+    radial-gradient(circle at 80% 18%, rgba(194, 154, 99, 0.14), transparent 26%),
+    radial-gradient(circle at 72% 78%, rgba(156, 170, 141, 0.12), transparent 22%),
+    linear-gradient(180deg, var(--ae-bg) 0%, var(--ae-bg-secondary) 100%);
+  min-height: 100vh;
+}
+
+/* Subtle grid overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(86, 68, 54, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(86, 68, 54, 0.028) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(180deg, rgba(0,0,0,0.18), transparent 78%);
+  opacity: 0.8;
+  z-index: 0;
+}
+
+/* ───────────────────────────────────────────────────────────── */
+/* Selection */
+/* ───────────────────────────────────────────────────────────── */
+
+::selection {
+  background-color: rgba(122, 138, 106, 0.25);
+  color: var(--ae-text);
+}
+
+/* ───────────────────────────────────────────────────────────── */
+/* Scrollbar (subtle, warm-tinted) */
+/* ───────────────────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(86, 68, 54, 0.20);
+  border-radius: var(--ae-radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(86, 68, 54, 0.35);
+}
+
+/* ───────────────────────────────────────────────────────────── */
+/* Focus States (universal) */
+/* ───────────────────────────────────────────────────────────── */
+
+*:focus-visible {
+  outline: none;
+}
+
+/* Apply olive focus ring to custom components */
+*:focus-visible:not(.ant-btn):not(.ant-input):not(.ant-input-affix-wrapper):not(.ant-select-focused):not(.ant-radio-wrapper):not(.ant-checkbox-wrapper):not(.ant-switch):not(.ant-slider-handle) {
+  box-shadow: var(--ae-shadow-focus-ring, 0 0 0 3px rgba(122, 138, 106, 0.12));
+}
+
+/* ───────────────────────────────────────────────────────────── */
+/* Serif Typography for Display Headings */
+/* ───────────────────────────────────────────────────────────── */
+
+h1, h2, h3 {
+  font-family: var(--ae-font-family-serif);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 0.96;
+}
+
+h1 {
+  font-size: clamp(38px, 4.2vw, 58px);
+  letter-spacing: -0.04em;
+}
+
+h2 {
+  font-size: clamp(32px, 3.6vw, 52px);
+  letter-spacing: -0.05em;
+}
+
+h3 {
+  font-size: clamp(24px, 2.8vw, 38px);
+}
+
+/* ───────────────────────────────────────────────────────────── */
+/* Ant Design Overrides (global refinements for new theme) */
+/* ───────────────────────────────────────────────────────────── */
+
+/* Smooth table row transitions */
+.ant-table-tbody > tr {
+  transition: background-color var(--ae-motion-duration-fast) var(--ae-motion-ease);
+}
+
+/* Card hover lift */
+.ant-card {
+  transition: box-shadow var(--ae-motion-duration-fast) var(--ae-motion-ease);
+  border-radius: var(--ae-radius-lg) !important;
+}
+
+.ant-card-hoverable:hover {
+  box-shadow: var(--ae-shadow-soft);
+}
+
+/* Button press feedback */
+.ant-btn {
+  transition: all var(--ae-motion-duration-fast) var(--ae-motion-ease);
+  border-radius: var(--ae-radius-md) !important;
+}
+
+.ant-btn:active {
+  transform: translateY(0.5px);
+}
+
+/* Primary button gradient override */
+.ant-btn-primary {
+  background: linear-gradient(135deg, #b8956a, #a08060 52%, #8b9a6d) !important;
+  border-color: transparent !important;
+  box-shadow: 0 14px 28px rgba(168, 149, 106, 0.18) !important;
+}
+
+.ant-btn-primary:hover {
+  background: linear-gradient(135deg, #c2a070, #b09070 52%, #9aaa88) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 18px 32px rgba(168, 149, 106, 0.22) !important;
+}
+
+/* Menu item transitions */
+.ant-menu-item {
+  transition: all var(--ae-motion-duration-fast) var(--ae-motion-ease);
+  border-radius: var(--ae-radius-md) !important;
+}
+
+/* Input focus refinement */
+.ant-input:focus,
+.ant-input-affix-wrapper:focus,
+.ant-input-affix-wrapper-focused {
+  box-shadow: 0 0 0 3px rgba(122, 138, 106, 0.12) !important;
+  border-color: var(--ae-accent-olive) !important;
+}
+
+/* Modal entrance animation override */
+.ant-modal-mask {
+  background-color: var(--ae-overlay) !important;
+  backdrop-filter: blur(4px);
+}
+
+.ant-modal-content {
+  border-radius: var(--ae-radius-xl) !important;
+  background: var(--ae-panel-strong) !important;
+  backdrop-filter: blur(16px);
+  box-shadow: var(--ae-shadow) !important;
+}
+
+/* Drawer styling */
+.ant-drawer-content {
+  background: var(--ae-panel-strong) !important;
+  backdrop-filter: blur(16px);
+}
+
+/* Tag styling */
+.ant-tag {
+  border-radius: var(--ae-radius-full) !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  border: 1px solid var(--ae-line) !important;
+}
+
+/* ───────────────────────────────────────────────────────────── */
+/* Utility Classes (Tailwind-compatible) */
+/* ───────────────────────────────────────────────────────────── */
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn var(--ae-motion-duration-slow) var(--ae-motion-ease-smooth);
+  }
+
+  .animate-slide-up {
+    animation: slideUp var(--ae-motion-duration-slow) var(--ae-motion-ease-smooth);
+  }
+
+  .animate-float-in {
+    animation: floatIn 0.65s var(--ae-motion-ease-smooth) both;
+  }
+
+  .animate-drift {
+    animation: drift 12s ease-in-out infinite alternate;
+  }
+
+  .animate-pulse-soft {
+    animation: pulseSoft 1.5s ease-in-out infinite;
+  }
+
+  .glass-panel {
+    background: var(--ae-panel);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .glass-panel-strong {
+    background: var(--ae-panel-strong);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .font-serif {
+    font-family: var(--ae-font-family-serif);
+  }
+}
+
+/* ───────────────────────────────────────────────────────────── */
+/* Keyframes */
+/* ───────────────────────────────────────────────────────────── */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floatIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes drift {
+  0% { transform: rotate(12deg) translate(0, 0); }
+  100% { transform: rotate(16deg) translate(8px, -4px); }
+}
+
+@keyframes pulseSoft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ───────────────────────────────────────────────────────────── */
+/* Dark Mode Base Adjustments */
+/* ───────────────────────────────────────────────────────────── */
+
+[data-theme='dark'] body {
+  background-color: var(--ae-bg, #1c1917);
+  color: var(--ae-text, #e8e2da);
+}
+
+[data-theme='dark'] ::selection {
+  background-color: rgba(168, 149, 106, 0.35);
+  color: var(--ae-text, #e8e2da);
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: rgba(160, 150, 138, 0.25);
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(160, 150, 138, 0.40);
+}

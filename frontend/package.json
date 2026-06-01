@@ -1,0 +1,52 @@
+{
+  "name": "agent-engine-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.0.0",
+    "@hookform/resolvers": "^5.4.0",
+    "@xyflow/react": "^12.10.2",
+    "antd": "^5.0.0",
+    "axios": "^1.6.0",
+    "echarts": "^5.0.0",
+    "echarts-for-react": "^3.0.6",
+    "elkjs": "^0.11.1",
+    "framer-motion": "^12.40.0",
+    "highlight.js": "^11.11.1",
+    "markdown-it": "^14.0.0",
+    "next": "^14.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "react-hook-form": "^7.76.1",
+    "react-markdown": "^10.1.0",
+    "react-textarea-autosize": "^8.5.9",
+    "rehype-sanitize": "^6.0.0",
+    "remark-gfm": "^4.0.1",
+    "tailwindcss": "^3.0.0",
+    "zod": "^4.4.3",
+    "zundo": "^2.3.0",
+    "zustand": "^4.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "autoprefixer": "^10.0.0",
+    "jest": "^30.4.2",
+    "jest-environment-jsdom": "^30.4.1",
+    "postcss": "^8.0.0",
+    "ts-jest": "^29.4.11",
+    "typescript": "^5.0.0"
+  }
+}

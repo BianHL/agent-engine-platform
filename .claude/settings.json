@@ -1,0 +1,3 @@
+{
+  "disabledHooks": ["pre:edit-write:gateguard-fact-force"]
+}

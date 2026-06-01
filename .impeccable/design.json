@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-31T13:09:53.134377+08:00",
+  "title": "Design System: Agent Engine Platform",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Engine Amber", "canonical": "oklch(64% 0.14 75)", "tonalRamp": ["#451a03","#78350f","#92400e","#b45309","#d97706","#f59e0b","#fbbf24","#fde68a"] },
+      "primary-deep": { "role": "primary", "displayName": "Deep Amber", "canonical": "oklch(56% 0.13 75)", "tonalRamp": ["#451a03","#78350f","#92400e","#b45309","#d97706","#f59e0b","#fbbf24","#fde68a"] },
+      "primary-light": { "role": "primary", "displayName": "Light Amber", "canonical": "oklch(78% 0.14 85)", "tonalRamp": ["#451a03","#78350f","#92400e","#b45309","#d97706","#f59e0b","#fbbf24","#fde68a"] },
+      "secondary": { "role": "secondary", "displayName": "Deep Sky", "canonical": "oklch(37% 0.09 240)", "tonalRamp": ["#082f49","#0c4a6e","#075985","#0369a1","#0ea5e9","#38bdf8","#7dd3fc","#bae6fd"] },
+      "secondary-light": { "role": "secondary", "displayName": "Sky Light", "canonical": "oklch(76% 0.12 235)", "tonalRamp": ["#082f49","#0c4a6e","#075985","#0369a1","#0ea5e9","#38bdf8","#7dd3fc","#bae6fd"] },
+      "neutral-00": { "role": "neutral", "displayName": "Warm White", "canonical": "oklch(98% 0.005 70)", "tonalRamp": ["#1c1917","#292524","#44403c","#57534e","#78716c","#a8a29e","#d6d3d1","#fafaf9"] },
+      "neutral-09": { "role": "neutral", "displayName": "Warm Black", "canonical": "oklch(20% 0.005 70)", "tonalRamp": ["#1c1917","#292524","#44403c","#57534e","#78716c","#a8a29e","#d6d3d1","#fafaf9"] },
+      "surface": { "role": "surface", "displayName": "Surface White", "canonical": "oklch(100% 0 0)", "tonalRamp": ["#1c1917","#292524","#44403c","#57534e","#78716c","#a8a29e","#f5f5f4","#ffffff"] },
+      "danger": { "role": "semantic", "displayName": "Danger Red", "canonical": "oklch(55% 0.22 25)", "tonalRamp": ["#450a0a","#7f1d1d","#991b1b","#b91c1c","#dc2626","#ef4444","#f87171","#fca5a5"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Page titles on primary surfaces." },
+      "headline": { "displayName": "Headline", "purpose": "Section headings, card titles, modal headers." },
+      "title": { "displayName": "Title", "purpose": "Subsection headings, table headers, list item titles." },
+      "body": { "displayName": "Body", "purpose": "Primary reading text, descriptions, form labels." },
+      "label": { "displayName": "Label", "purpose": "Caps-style labels, badges, metadata tags, button text." },
+      "mono": { "displayName": "Mono", "purpose": "Code, IDs, timestamps, technical values." }
+    },
+    "shadows": [
+      { "name": "ambient-low", "value": "0 1px 3px rgba(28, 25, 23, 0.06), 0 1px 2px rgba(28, 25, 23, 0.04)", "purpose": "Subtle lift for hover states on cards and buttons." },
+      { "name": "ambient-medium", "value": "0 4px 6px rgba(28, 25, 23, 0.05), 0 2px 4px rgba(28, 25, 23, 0.03)", "purpose": "Elevated surfaces — dropdowns, popovers, floating toolbars." },
+      { "name": "ambient-high", "value": "0 10px 15px rgba(28, 25, 23, 0.07), 0 4px 6px rgba(28, 25, 23, 0.04)", "purpose": "Modals, drawers, command palette." },
+      { "name": "focus-ring", "value": "0 0 0 2px rgba(217, 119, 6, 0.2)", "purpose": "Amber-tinted focus indicator." }
+    ],
+    "motion": [
+      { "name": "ease-out-quart", "value": "cubic-bezier(0.25, 1, 0.5, 1)", "purpose": "Standard easing for state transitions." },
+      { "name": "duration-fast", "value": "150ms", "purpose": "Button hovers, color transitions." },
+      { "name": "duration-normal", "value": "200ms", "purpose": "Card hovers, dropdown opens." },
+      { "name": "duration-slow", "value": "250ms", "purpose": "Modal transitions, page fades." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "576px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "992px" },
+      { "name": "xl", "value": "1200px" },
+      { "name": "xxl", "value": "1600px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The main action button. Engine Amber background with warm white text.",
+      "html": "<button class=\"ds-btn-primary\">Create Agent</button>",
+      "css": ".ds-btn-primary { background: #d97706; color: #fafaf9; padding: 8px 16px; font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 500; border: none; border-radius: 6px; cursor: pointer; transition: background-color 150ms cubic-bezier(0.25, 1, 0.5, 1); } .ds-btn-primary:hover { background: #b45309; } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.2); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Secondary action. Transparent with subtle border.",
+      "html": "<button class=\"ds-btn-secondary\">Cancel</button>",
+      "css": ".ds-btn-secondary { background: #ffffff; color: #44403c; padding: 8px 16px; font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 500; border: 1px solid #e7e5e4; border-radius: 6px; cursor: pointer; transition: background-color 150ms cubic-bezier(0.25, 1, 0.5, 1); } .ds-btn-secondary:hover { background: #f5f5f4; } .ds-btn-secondary:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.2); }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Content container with flat rest state and subtle hover lift.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">Agent Configuration</h3><p class=\"ds-card-body\">Configure your agent's behavior and capabilities.</p></div>",
+      "css": ".ds-card { background: #ffffff; border: 1px solid #e7e5e4; border-radius: 8px; padding: 24px; transition: box-shadow 150ms cubic-bezier(0.25, 1, 0.5, 1); } .ds-card:hover { box-shadow: 0 1px 3px rgba(28, 25, 23, 0.06), 0 1px 2px rgba(28, 25, 23, 0.04); } .ds-card-title { font-family: Inter, system-ui, sans-serif; font-size: 18px; font-weight: 600; color: #44403c; margin: 0 0 8px 0; } .ds-card-body { font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 400; color: #57534e; line-height: 1.6; margin: 0; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Standard text field with amber focus ring.",
+      "html": "<input class=\"ds-input\" placeholder=\"Agent name...\" />",
+      "css": ".ds-input { background: #ffffff; color: #292524; padding: 8px 12px; font-family: Inter, system-ui, sans-serif; font-size: 14px; border: 1px solid #e7e5e4; border-radius: 6px; outline: none; transition: border-color 150ms cubic-bezier(0.25, 1, 0.5, 1), box-shadow 150ms cubic-bezier(0.25, 1, 0.5, 1); width: 100%; box-sizing: border-box; } .ds-input:focus { border-color: #d97706; box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.2); } .ds-input::placeholder { color: #a8a29e; }"
+    },
+    {
+      "name": "Filter Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Toggleable filter pill with full rounding.",
+      "html": "<span class=\"ds-chip\">Production</span>",
+      "css": ".ds-chip { display: inline-block; background: #f5f5f4; color: #57534e; padding: 4px 12px; font-family: Inter, system-ui, sans-serif; font-size: 12px; font-weight: 500; border-radius: 9999px; cursor: pointer; transition: background-color 150ms cubic-bezier(0.25, 1, 0.5, 1), color 150ms cubic-bezier(0.25, 1, 0.5, 1); } .ds-chip:hover { background: #e7e5e4; } .ds-chip.active { background: #d97706; color: #fafaf9; }"
+    },
+    {
+      "name": "Navigation Item",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "Sidebar navigation item with amber active indicator.",
+      "html": "<a class=\"ds-nav-item\" href=\"#\">Dashboard</a>",
+      "css": ".ds-nav-item { display: block; padding: 8px 12px; font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 400; color: #57534e; text-decoration: none; border-radius: 6px; transition: background-color 150ms cubic-bezier(0.25, 1, 0.5, 1), color 150ms cubic-bezier(0.25, 1, 0.5, 1); } .ds-nav-item:hover { background: #f5f5f4; color: #44403c; } .ds-nav-item.active { background: #f5f5f4; color: #44403c; border-left: 3px solid #d97706; padding-left: 9px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Precision Instrument",
+    "overview": "Agent Engine's interface should feel like a high-end piece of industrial equipment: every surface machined to purpose, every control exactly where an operator expects it, every feedback signal immediate and unambiguous. The aesthetic is warm technicality — warm stone neutrals and amber accent create an environment that feels inhabited by humans, while tight spacing, precise corners, and disciplined information hierarchy convey operational seriousness.",
+    "keyCharacteristics": [
+      "Restrained color strategy with committed moments",
+      "Single sans-serif family (Inter) carrying all text roles",
+      "Flat-by-default surfaces; elevation through subtle border and shadow on interaction",
+      "8px base spacing grid with deliberate rhythm variation",
+      "Motion conveys state only: 150–250ms transitions, ease-out-quart easing"
+    ],
+    "rules": [
+      { "name": "The No Pure Black Rule", "body": "#000000 and #ffffff are prohibited. Even our white surfaces are tinted warm.", "section": "colors" },
+      { "name": "The One Voice Rule", "body": "Engine Amber appears on ≤10% of any internal tool screen. Its rarity is the point.", "section": "colors" },
+      { "name": "The Tight Scale Rule", "body": "Type scale ratio is 1.125–1.2 between steps. Exaggerated contrast creates noise in product UIs.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Surfaces are flat at rest. Shadows appear only as a response to state or for true spatial separation.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use Engine Amber for primary actions, active states, and key metrics.",
+      "Do maintain the 8px spacing grid with multiples of 4px.",
+      "Do use borders to separate cards and sections.",
+      "Do provide skeleton loading states for data surfaces.",
+      "Do ensure every interactive element has visible focus states.",
+      "Do use the mono font for technical values.",
+      "Do respect prefers-reduced-motion."
+    ],
+    "donts": [
+      "Don't use the default Ant Design blue (#1890ff) anywhere.",
+      "Don't use gradient text (background-clip: text).",
+      "Don't use glassmorphism as a default.",
+      "Don't create identical card grids with icon + heading + text repeated endlessly.",
+      "Don't use side-stripe borders except for sidebar navigation active indicator.",
+      "Don't use the hero-metric template on the Dashboard.",
+      "Don't use decorative motion that doesn't convey state.",
+      "Don't mix English and Chinese in the same UI surface.",
+      "Don't use display fonts or serif fonts for UI labels.",
+      "Don't nest cards inside cards."
+    ]
+  }
+}
