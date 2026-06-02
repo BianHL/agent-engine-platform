@@ -81,7 +81,7 @@ async def login_rate_limit_dependency(request: Request) -> None:
         )
 
 
-@router.post("/login", dependencies=[Depends(login_rate_limit_dependency)])
+@router.post("/login", response_model=TokenResponse, dependencies=[Depends(login_rate_limit_dependency)])
 async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
     """Authenticate user and return JWT token."""
     stmt = select(UserModel).where(UserModel.username == req.username)
