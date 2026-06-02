@@ -11,7 +11,6 @@ from sse_starlette.sse import EventSourceResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import get_current_user
 from app.core.rbac import require_permission
 from app.core.database import async_session, get_db
 from app.engines.safety_engine.safety import SafetyAction, SafetyEngine, SafetyPolicy
