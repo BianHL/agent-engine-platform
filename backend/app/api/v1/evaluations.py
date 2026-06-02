@@ -187,7 +187,7 @@ async def get_run_results(
     user: dict = Depends(get_current_user),
 ):
     """Get detailed results for a specific run."""
-    stmt = select(EvaluationRunModel).where(EvaluationRunModel.id == run_id)
+    stmt = select(EvaluationRunModel).where(EvaluationRunModel.id == run_id, EvaluationRunModel.tenant_id == user.get("tenant_id"))
     result = await db.execute(stmt)
     run = result.scalar_one_or_none()
     if not run:

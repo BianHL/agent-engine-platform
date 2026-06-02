@@ -35,7 +35,7 @@ async def create_feedback(
     rating = body.rating
 
     # Verify message exists
-    stmt = select(MessageModel).where(MessageModel.id == message_id)
+    stmt = select(MessageModel).where(MessageModel.id == message_id, MessageModel.tenant_id == user.get("tenant_id"))
     result = await db.execute(stmt)
     if not result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Message not found")
@@ -105,6 +105,9 @@ async def get_feedback_stats(
         func.count().filter(MessageFeedbackModel.rating == "negative").label("negative"),
     ).join(
         MessageModel, MessageFeedbackModel.message_id == MessageModel.id
+    ).where(
+        MessageModel.agent_id == agent_id,
+        MessageModel.tenant_id == user.get("tenant_id"),
     )
     result = await db.execute(stmt)
     row = result.one()
@@ -132,7 +135,7 @@ async def create_annotation(
     corrected_answer = body.corrected_answer
 
     # Verify message exists
-    stmt = select(MessageModel).where(MessageModel.id == message_id)
+    stmt = select(MessageModel).where(MessageModel.id == message_id, MessageModel.tenant_id == user.get("tenant_id"))
     result = await db.execute(stmt)
     if not result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Message not found")
