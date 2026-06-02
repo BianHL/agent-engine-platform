@@ -37,7 +37,7 @@ class MarketplaceItem(Base):
     reject_reason = Column(Text, nullable=True)
     version = Column(Integer, default=1)
     config_snapshot = Column(JSON, default=dict)
-    avg_rating = Column(Float, default=0.0)
+    avg_rating = Column(Numeric(3, 2), default=0.0)
     rating_count = Column(Integer, default=0)
     usage_count = Column(Integer, default=0)
     clone_count = Column(Integer, default=0)

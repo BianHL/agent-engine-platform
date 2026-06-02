@@ -535,7 +535,7 @@ class MarketplaceAppModel(Base):
     version = Column(String(20))
     status = Column(String(20), default="pending", index=True)
     install_count = Column(Integer, default=0)
-    rating = Column(Float, default=0.0)
+    rating = Column(Numeric(3, 2), default=0.0)
     deleted_at = Column(DateTime, nullable=True, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None), onupdate=lambda: datetime.now(UTC).replace(tzinfo=None))
