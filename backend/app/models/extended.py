@@ -8,29 +8,7 @@ from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, JSON, 
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base
-
-
-class AgentVersionModel(Base):
-    """Agent version model for version management."""
-
-    __tablename__ = "agent_versions"
-
-    id = Column(String(36), primary_key=True)
-    agent_id = Column(String(36), ForeignKey("agents.id"), nullable=False, index=True)
-    version = Column(String(50), nullable=False)
-    system_prompt = Column(Text, nullable=False)
-    model_provider = Column(String(50))
-    model_name = Column(String(100))
-    config = Column(JSON, default={})
-    description = Column(Text)
-    is_active = Column(Boolean, default=False)
-    created_by = Column(String(36), nullable=False)
-    tenant_id = Column(String(36), nullable=False, index=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
-    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
-
-    # Relationships
-    agent = relationship("AgentModel", back_populates="versions")
+from app.models.agent import AgentVersionModel
 
 
 class ABTestModel(Base):

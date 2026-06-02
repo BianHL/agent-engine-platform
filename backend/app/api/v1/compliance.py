@@ -13,7 +13,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user, get_tenant_id
 from app.core.database import get_db
-from app.models.base import AgentModel, OperationLogModel, UserModel
+from app.models.agent import AgentModel
+from app.models.audit import OperationLogModel
+from app.models.user import UserModel
 
 logger = logging.getLogger(__name__)
 

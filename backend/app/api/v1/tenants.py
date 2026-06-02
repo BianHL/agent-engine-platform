@@ -27,6 +27,15 @@ async def create_tenant(
     return full
 
 
+@router.get("/")
+async def list_tenants(
+    db: AsyncSession = Depends(get_db),
+    user: dict = Depends(require_role("admin"))):
+    """List all tenants (admin only)."""
+    svc = TenantService(db)
+    return await svc.list()
+
+
 @router.get("/{tenant_id}")
 async def get_tenant(
     tenant_id: str,
@@ -50,11 +59,10 @@ async def update_tenant(
     user: dict = Depends(require_role("admin"))):
     """Update tenant basic info (admin only)."""
     svc = TenantService(db)
-    tenant = await svc.get(tenant_id)
-    if not tenant:
-        raise HTTPException(status_code=404, detail="Tenant not found")
-    # TenantService doesn't have a generic update; use features update for now
-    return tenant
+    try:
+        return await svc.update(tenant_id, body)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.put("/{tenant_id}/features")

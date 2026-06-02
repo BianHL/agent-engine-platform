@@ -5,6 +5,7 @@ from app.api.v1 import (
     audit,
     auth,
     chat,
+    compliance,
     conversations,
     evaluations,
     feedbacks,
@@ -15,6 +16,7 @@ from app.api.v1 import (
     model_compare,
     models as models_router,
     multi_agent,
+    plugins,
     publish,
     roles,
     tasks,
@@ -55,3 +57,5 @@ api_router.include_router(data_import.router)
 api_router.include_router(model_compare.router)
 api_router.include_router(variables.router)
 api_router.include_router(publish.router)
+api_router.include_router(compliance.router)
+api_router.include_router(plugins.router)

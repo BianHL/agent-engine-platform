@@ -119,6 +119,8 @@ async def _get_or_create_permission(
     perm = PermissionModel(
         resource=resource,
         action=action,
+        module=resource,
+        name=f"{resource}:{action}",
         description=f"{action} on {resource}",
     )
     db.add(perm)
@@ -145,6 +147,7 @@ async def init_default_roles(db: AsyncSession, tenant_id: str) -> None:
         role = RoleModel(
             tenant_id=tenant_id,
             name=role_name,
+            code=role_name.lower(),
             description=role_def["description"],
             is_system=role_def["is_system"],
         )

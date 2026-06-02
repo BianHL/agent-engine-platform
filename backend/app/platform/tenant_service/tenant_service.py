@@ -39,6 +39,13 @@ class TenantService:
 
         return {"id": tenant.id, "name": tenant.name, "code": tenant.code}
 
+    async def list(self) -> list[dict]:
+        """List all tenants."""
+        stmt = select(TenantModel)
+        result = await self.db.execute(stmt)
+        tenants = result.scalars().all()
+        return [self._to_dict(t) for t in tenants]
+
     async def get(self, tenant_id: str) -> Optional[dict]:
         """Get tenant by ID."""
         stmt = select(TenantModel).where(TenantModel.id == tenant_id)
@@ -46,15 +53,61 @@ class TenantService:
         tenant = result.scalar_one_or_none()
         if not tenant:
             return None
+        return self._to_dict(tenant)
+
+    def _to_dict(self, tenant: TenantModel) -> dict:
         return {
             "id": tenant.id,
             "name": tenant.name,
             "code": tenant.code,
+            "description": tenant.settings.get("description") if tenant.settings else None,
             "status": tenant.status,
             "max_agents": tenant.max_agents,
             "features": tenant.features or {},
             "created_at": tenant.created_at.isoformat() if tenant.created_at else None,
+            "updated_at": tenant.updated_at.isoformat() if tenant.updated_at else None,
+            "quota": {
+                "max_agents": tenant.max_agents,
+                "max_knowledge_bases": tenant.settings.get("max_knowledge_bases", 5) if tenant.settings else 5,
+                "max_workflows": tenant.settings.get("max_workflows", 10) if tenant.settings else 10,
+                "max_users": tenant.max_users,
+                "storage_gb": tenant.max_storage_gb,
+                "api_calls_per_month": tenant.settings.get("api_calls_per_month", 10000) if tenant.settings else 10000,
+            },
         }
+
+    async def update(self, tenant_id: str, data: dict) -> dict:
+        """Update tenant basic info."""
+        stmt = select(TenantModel).where(TenantModel.id == tenant_id)
+        result = await self.db.execute(stmt)
+        tenant = result.scalar_one_or_none()
+        if not tenant:
+            raise AgentEngineError(f"Tenant {tenant_id} not found")
+        if "name" in data:
+            tenant.name = data["name"]
+        if "code" in data:
+            tenant.code = data["code"]
+        if "status" in data:
+            tenant.status = data["status"]
+        if "description" in data:
+            settings = tenant.settings or {}
+            settings["description"] = data["description"]
+            tenant.settings = settings
+        if "quota" in data:
+            quota = data["quota"]
+            if "max_agents" in quota:
+                tenant.max_agents = quota["max_agents"]
+            if "max_users" in quota:
+                tenant.max_users = quota["max_users"]
+            if "storage_gb" in quota:
+                tenant.max_storage_gb = quota["storage_gb"]
+            settings = tenant.settings or {}
+            for k in ["max_knowledge_bases", "max_workflows", "api_calls_per_month"]:
+                if k in quota:
+                    settings[k] = quota[k]
+            tenant.settings = settings
+        await self.db.flush()
+        return self._to_dict(tenant)
 
     async def check_agent_quota(self, tenant_id: str) -> bool:
         """Check if tenant can create more agents. Raises QuotaExceededError if not."""

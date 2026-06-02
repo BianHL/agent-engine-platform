@@ -1,18 +1,16 @@
-FROM node:20-alpine AS builder
+FROM node:22-alpine3.21 AS builder
 WORKDIR /app
 
-# Install dependencies (use ci for reproducible builds)
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# Build with configurable API URL
 ARG NEXT_PUBLIC_API_URL=http://localhost:8000
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 COPY . .
 RUN npm run build
 
-FROM node:20-alpine AS runner
+FROM node:22-alpine3.21 AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
@@ -21,7 +19,6 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
 
-# Non-root user for security
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 

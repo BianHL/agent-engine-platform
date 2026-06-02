@@ -39,6 +39,7 @@ class AgentModel(Base, EnterpriseMixin, OptimisticLockMixin):
     tenant = relationship("TenantModel", back_populates="agents")
     conversations = relationship("ConversationModel", back_populates="agent", cascade="all, delete-orphan")
     versions = relationship("AgentVersionModel", back_populates="agent", cascade="all, delete-orphan")
+    ab_tests = relationship("ABTestModel", back_populates="agent", cascade="all, delete-orphan")
 
 
 class AgentVersionModel(Base):
