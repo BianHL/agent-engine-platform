@@ -168,6 +168,7 @@ class ConversationService:
         user_id: str,
         content: str,
         llm_adapter,
+        tenant_id: str = None,
         model: str = "",
         temperature: float = 0.7,
         max_tokens: int = 2000,
@@ -181,7 +182,7 @@ class ConversationService:
             return
 
         try:
-            await self.add_message(conversation_id, "user", content)
+            await self.add_message(conversation_id, "user", content, tenant_id=tenant_id)
         except Exception as e:
             yield {
                 "event": "error",
@@ -230,7 +231,7 @@ class ConversationService:
         response_text = "".join(full_response)
         try:
             assistant_msg = await self.add_message(
-                conversation_id, "assistant", response_text
+                conversation_id, "assistant", response_text, tenant_id=tenant_id
             )
             assistant_msg_id = assistant_msg.get("id", "")
         except Exception as e:
