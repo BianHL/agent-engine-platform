@@ -47,6 +47,34 @@ def _build_system_prompt(agent: AgentModel) -> str:
     return "\n\n".join(parts) if parts else "You are a helpful assistant."
 
 
+def _get_llm_adapter(request: Request, agent: AgentModel):
+    """Get LLM adapter - from app state or agent config."""
+    # Try app-level adapter first
+    adapter = getattr(request.app.state, "llm_adapter", None)
+    if adapter:
+        return adapter
+
+    # Try to create adapter from agent's model provider config
+    from app.engines.model_engine.llm.openai import OpenAIAdapter
+    from app.engines.model_engine.llm.anthropic import AnthropicAdapter
+    from app.engines.model_engine.llm.custom_openai import CustomOpenAIAdapter
+    from app.engines.model_engine.llm.ollama import OllamaAdapter
+
+    provider = agent.model_provider or ""
+    config = agent.model_config or {}
+    adapter_map = {
+        "openai": OpenAIAdapter,
+        "anthropic": AnthropicAdapter,
+        "custom_openai": CustomOpenAIAdapter,
+        "ollama": OllamaAdapter,
+    }
+    adapter_cls = adapter_map.get(provider)
+    if adapter_cls:
+        return adapter_cls(config)
+
+    return None
+
+
 @router.post("/completions", response_model=ChatCompletionResponse)
 async def chat_completions(
     request: Request,
@@ -91,15 +119,13 @@ async def chat_completions(
         except Exception:
             pass  # Retrieval is optional; don't block chat on failure
 
-    # Get LLM adapter from app state
-    llm_adapter = getattr(request.app.state, "llm_adapter", None)
+    # Get LLM adapter
+    llm_adapter = _get_llm_adapter(request, agent)
     if not llm_adapter:
-        # Fallback: return a placeholder when no adapter configured
-        return {
-            "content": f"[No LLM adapter configured] Agent '{agent.name}' received: {last_msg}",
-            "model": agent.model_name or "none",
-            "usage": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0},
-        }
+        raise HTTPException(
+            status_code=503,
+            detail=f"No LLM adapter available for provider '{agent.model_provider}'. Configure a model provider in settings.",
+        )
 
     response = await llm_adapter.chat(
         messages=llm_messages,
@@ -180,38 +206,34 @@ async def chat_stream(
     db.add(MessageModel(conversation_id=conv_id, tenant_id=user["tenant_id"], role="user", content=last_msg))
     await db.flush()
 
-    llm_adapter = getattr(request.app.state, "llm_adapter", None)
+    llm_adapter = _get_llm_adapter(request, agent)
+    if not llm_adapter:
+        raise HTTPException(
+            status_code=503,
+            detail=f"No LLM adapter available for provider '{agent.model_provider}'. Configure a model provider in settings.",
+        )
 
     async def event_generator():
         async with async_session() as db:
             full_response = []
-            if not llm_adapter:
-                placeholder = f"[No LLM adapter configured] Agent '{agent.name}' received: {last_msg}"
-                for chunk in placeholder.split():
+            try:
+                async for chunk in llm_adapter.chat_stream(
+                    messages=llm_messages,
+                    model=agent.model_name or "",
+                    temperature=agent.model_config.get("temperature", 0.7),
+                    max_tokens=agent.model_config.get("max_tokens", 2000),
+                ):
                     yield {
                         "event": "message",
-                        "data": json.dumps({"content": chunk + " ", "done": False}),
+                        "data": json.dumps({"content": chunk.content, "done": False}),
                     }
-                    full_response.append(chunk)
-                    await asyncio.sleep(0.05)
-            else:
-                try:
-                    async for chunk in llm_adapter.chat_stream(
-                        messages=llm_messages,
-                        model=agent.model_name or "",
-                        temperature=agent.model_config.get("temperature", 0.7),
-                        max_tokens=agent.model_config.get("max_tokens", 2000)):
-                        yield {
-                            "event": "message",
-                            "data": json.dumps({"content": chunk.content, "done": False}),
-                        }
-                        full_response.append(chunk.content)
-                except Exception as e:
-                    yield {
-                        "event": "error",
-                        "data": json.dumps({"error": str(e)}),
-                    }
-                    return
+                    full_response.append(chunk.content)
+            except Exception as e:
+                yield {
+                    "event": "error",
+                    "data": json.dumps({"error": str(e)}),
+                }
+                return
 
             # Save assistant message
             response_text = "".join(full_response)
@@ -226,7 +248,6 @@ async def chat_stream(
             }
 
     return EventSourceResponse(event_generator())
-
 
 @router.post("/upload")
 async def chat_with_file(
@@ -265,14 +286,12 @@ async def chat_with_file(
     llm_messages = [{"role": "system", "content": system_prompt}]
     llm_messages.append({"role": "user", "content": full_message})
 
-    llm_adapter = getattr(request.app.state, "llm_adapter", None)
+    llm_adapter = _get_llm_adapter(request, agent)
     if not llm_adapter:
-        return {
-            "content": f"[No LLM adapter configured] Agent '{agent.name}' received: {full_message}",
-            "model": agent.model_name or "none",
-            "usage": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0},
-            "file": {"id": file_id, "filename": filename, "size": len(content)},
-        }
+        raise HTTPException(
+            status_code=503,
+            detail=f"No LLM adapter available for provider '{agent.model_provider}'. Configure a model provider in settings.",
+        )
 
     response = await llm_adapter.chat(
         messages=llm_messages,
