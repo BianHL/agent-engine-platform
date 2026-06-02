@@ -11,6 +11,7 @@ from sqlalchemy import select, func, and_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user, get_tenant_id
+from app.core.rbac import require_permission
 from app.core.database import get_db
 from app.models.base import AgentModel, AgentVersionModel, ABTestModel
 

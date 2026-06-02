@@ -3,7 +3,8 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import get_current_user, require_permission
+from app.core.auth import get_current_user
+from app.core.rbac import require_permission
 from app.core.database import get_db
 from app.models.system import ModelProviderModel
 from app.platform.model_service.model_service import ModelService
