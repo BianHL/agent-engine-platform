@@ -117,7 +117,7 @@ async def update_token(
     token_id: str,
     body: UpdateTokenRequest,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("api_token", "update")),
 ):
     """Update a token's name, permissions, or expiry."""
     stmt = select(ApiTokenModel).where(

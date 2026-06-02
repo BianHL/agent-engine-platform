@@ -107,7 +107,7 @@ async def get_whitebox_view(
 async def create_trial(
     item_id: str,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("marketplace", "create"))):
     """Record a trial use of an item (increments usage_count)."""
     svc = MarketplaceService(db)
     item = await svc.get_item(item_id)
@@ -126,7 +126,7 @@ async def create_rating(
     item_id: str,
     body: dict,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("marketplace", "create"))):
     """Create or update rating for an item."""
     svc = MarketplaceService(db)
     try:
@@ -220,7 +220,7 @@ async def get_my_submissions(
 async def cancel_submission(
     item_id: str,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("marketplace", "submit"))):
     """Cancel a pending submission."""
     svc = MarketplaceService(db)
     try:

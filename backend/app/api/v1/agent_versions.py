@@ -139,7 +139,7 @@ async def create_version(
     agent_id: str,
     data: VersionCreate,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("agent", "create")),
     tenant_id: str = Depends(get_tenant_id),
 ):
     """Create a new version for an agent."""
@@ -211,7 +211,7 @@ async def activate_version(
     agent_id: str,
     version_id: str,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("agent", "update")),
     tenant_id: str = Depends(get_tenant_id),
 ):
     """Activate a specific version."""
@@ -264,7 +264,7 @@ async def delete_version(
     agent_id: str,
     version_id: str,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("agent", "delete")),
     tenant_id: str = Depends(get_tenant_id),
 ):
     """Delete a version (cannot delete active version)."""
@@ -335,7 +335,7 @@ async def create_ab_test(
     agent_id: str,
     data: ABTestCreate,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("agent", "create")),
     tenant_id: str = Depends(get_tenant_id),
 ):
     """Create a new A/B test."""
@@ -412,7 +412,7 @@ async def start_ab_test(
     agent_id: str,
     test_id: str,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("agent", "update")),
     tenant_id: str = Depends(get_tenant_id),
 ):
     """Start an A/B test."""
@@ -460,7 +460,7 @@ async def stop_ab_test(
     agent_id: str,
     test_id: str,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("agent", "update")),
     tenant_id: str = Depends(get_tenant_id),
 ):
     """Stop an A/B test and calculate results."""

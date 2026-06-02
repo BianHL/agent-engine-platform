@@ -162,7 +162,7 @@ async def delete_webhook(
 async def test_webhook(
     webhook_id: str,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("webhook", "create")),
 ):
     """Send a test event to a webhook."""
     stmt = select(WebhookModel).where(

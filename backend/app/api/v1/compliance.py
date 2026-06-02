@@ -12,6 +12,7 @@ from sqlalchemy import select, func, and_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user, get_tenant_id
+from app.core.rbac import require_permission
 from app.core.database import get_db
 from app.models.agent import AgentModel
 from app.models.audit import OperationLogModel
@@ -87,7 +88,7 @@ class AuditReport(BaseModel):
 async def generate_compliance_report(
     request: ComplianceReportRequest,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("compliance", "create")),
     tenant_id: str = Depends(get_tenant_id),
 ):
     """Generate a compliance report."""
