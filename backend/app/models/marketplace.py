@@ -111,13 +111,10 @@ class MarketplaceChangeLogModel(Base):
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
     item_id = Column(String(36), ForeignKey("marketplace_items.id"), index=True, nullable=False)
-    tenant_id = Column(String(36), ForeignKey("tenants.id"), nullable=False)
     operator_id = Column(String(36), ForeignKey("users.id"), nullable=False)
-    change_type = Column(String(30), nullable=False, index=True)
-    field_name = Column(String(50), nullable=True)
-    old_value = Column(Text, nullable=True)
-    new_value = Column(Text, nullable=True)
-    description = Column(String(500), default="")
+    change_type = Column(String(20), nullable=False, index=True)
+    before_snapshot = Column(JSON, nullable=True)
+    after_snapshot = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
 
     item = relationship("MarketplaceItem")

@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class CreateAgentRequest(BaseModel):
@@ -50,7 +50,7 @@ class AgentResponse(BaseModel):
     category: Optional[str] = None
     model_provider: Optional[str] = None
     model_name: Optional[str] = None
-    llm_config: dict = Field(default={}, alias="model_config")
+    llm_config: dict = {}
     system_prompt: Optional[str] = None
     user_prompt_template: Optional[str] = None
     tools: list = []
@@ -68,7 +68,21 @@ class AgentResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True, "populate_by_name": True}
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _map_model_config(cls, data: Any) -> Any:
+        if hasattr(data, "model_config") and not isinstance(data, dict):
+            # ORM object: copy model_config attribute to llm_config
+            values = {}
+            for field in cls.model_fields:
+                if field == "llm_config":
+                    values["llm_config"] = getattr(data, "model_config", {})
+                else:
+                    values[field] = getattr(data, field, None)
+            return values
+        return data
 
 
 class AgentVersionResponse(BaseModel):

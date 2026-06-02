@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime, UTC
 from typing import Optional
 
-from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, JSON, ForeignKey, Text
+from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, JSON, ForeignKey, Text, Numeric
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base
@@ -22,7 +22,7 @@ class ABTestModel(Base):
     description = Column(Text)
     version_a_id = Column(String(36), ForeignKey("agent_versions.id"), nullable=False)
     version_b_id = Column(String(36), ForeignKey("agent_versions.id"), nullable=False)
-    traffic_split = Column(Float, default=0.5)
+    traffic_split = Column(Numeric(3, 2), default=0.5)
     metric = Column(String(50), default="satisfaction")
     duration_hours = Column(Integer, default=24)
     min_samples = Column(Integer, default=100)
@@ -60,7 +60,7 @@ class PluginModel(Base):
     dependencies = Column(JSON, default=[])
     permissions = Column(JSON, default=[])
     downloads = Column(Integer, default=0)
-    rating = Column(Float, default=0.0)
+    rating = Column(Numeric(3, 2), default=0.0)
     rating_count = Column(Integer, default=0)
     status = Column(String(20), default="draft")  # draft, published, archived
     tenant_id = Column(String(36), nullable=False, index=True)

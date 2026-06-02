@@ -24,6 +24,7 @@ from app.models.knowledge import DocumentModel, DocumentSegmentModel, KnowledgeB
 from app.models.extended import ABTestModel, ComplianceReportModel, PluginInstallModel, PluginModel, PluginRatingModel
 from app.models.marketplace import MarketplaceChangeLogModel, MarketplaceCloneModel, MarketplaceItem, MarketplaceRatingModel, MarketplaceReviewModel
 from app.models.multi_agent import CrewExecutionModel, CrewModel, HandoffModel, TaskModel
+from app.models.publish_channel import PublishChannelModel
 from app.models.system import (
     AccountIntegrateModel,
     AppInstallationModel,
@@ -89,6 +90,7 @@ base_module.ComplianceReportModel = ComplianceReportModel
 base_module.PluginModel = PluginModel
 base_module.PluginInstallModel = PluginInstallModel
 base_module.PluginRatingModel = PluginRatingModel
+base_module.PublishChannelModel = PublishChannelModel
 base_module.KnowledgeBaseModel = KnowledgeBaseModel
 base_module.MarketplaceItem = MarketplaceItem
 base_module.MarketplaceReviewModel = MarketplaceReviewModel
@@ -153,6 +155,7 @@ sys.modules[__name__].ComplianceReportModel = ComplianceReportModel
 sys.modules[__name__].PluginModel = PluginModel
 sys.modules[__name__].PluginInstallModel = PluginInstallModel
 sys.modules[__name__].PluginRatingModel = PluginRatingModel
+sys.modules[__name__].PublishChannelModel = PublishChannelModel
 sys.modules[__name__].KnowledgeBaseModel = KnowledgeBaseModel
 sys.modules[__name__].MarketplaceItem = MarketplaceItem
 sys.modules[__name__].MarketplaceReviewModel = MarketplaceReviewModel
@@ -267,6 +270,7 @@ __all__ = [
     "PluginModel",
     "PluginInstallModel",
     "PluginRatingModel",
+    "PublishChannelModel",
     "ComplianceReportModel",
     "MarketplaceItem",
     "MarketplaceReviewModel",

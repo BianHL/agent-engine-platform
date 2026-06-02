@@ -29,6 +29,10 @@ class RoleModel(Base, EnterpriseMixin):
     tenant = relationship("TenantModel", back_populates="roles")
     role_permissions = relationship("RolePermissionModel", back_populates="role", cascade="all, delete-orphan")
 
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "code", name="uk_roles_tenant_code"),
+    )
+
 
 class PermissionModel(Base):
     __tablename__ = "permissions"
@@ -56,6 +60,10 @@ class RolePermissionModel(Base):
     # relationships
     role = relationship("RoleModel", back_populates="role_permissions")
     permission = relationship("PermissionModel", back_populates="role_permissions")
+
+    __table_args__ = (
+        UniqueConstraint("role_id", "permission_id", name="uk_role_perm"),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -449,6 +457,10 @@ class AccountIntegrateModel(Base):
     raw_profile = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None), onupdate=lambda: datetime.now(UTC).replace(tzinfo=None))
+
+    __table_args__ = (
+        UniqueConstraint("provider_id", "external_id", name="uk_account_integrate"),
+    )
 
     @property
     def access_token(self):

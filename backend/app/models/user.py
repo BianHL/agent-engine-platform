@@ -1,7 +1,7 @@
 """User and Authentication models."""
 from datetime import UTC, datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, String
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base, EnterpriseMixin, generate_uuid
@@ -39,6 +39,11 @@ class UserModel(Base, EnterpriseMixin):
     operation_logs = relationship("OperationLogModel", back_populates="actor", foreign_keys="OperationLogModel.user_id")
     marketplace_items = relationship("MarketplaceItem", back_populates="creator", foreign_keys="MarketplaceItem.creator_id")
 
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "username", name="uk_users_tenant_username"),
+        UniqueConstraint("tenant_id", "email", name="uk_users_tenant_email"),
+    )
+
 
 class ApiTokenModel(Base):
     __tablename__ = "api_tokens"
@@ -74,6 +79,10 @@ class UserRoleModel(Base):
     tenant_id = Column(String(36), index=True, nullable=False)
     created_by = Column(String(36), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "role_id", name="uk_user_role"),
+    )
 
 
 class UserSessionModel(Base):

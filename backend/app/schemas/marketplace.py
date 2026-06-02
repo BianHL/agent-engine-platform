@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # --- Marketplace Item ---
@@ -30,6 +30,8 @@ class UpdateMarketplaceItemRequest(BaseModel):
 
 
 class MarketplaceItemResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     tenant_id: str
     creator_id: str
@@ -94,6 +96,8 @@ class ReviewActionRequest(BaseModel):
 
 
 class MarketplaceReviewResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     item_id: str
     tenant_id: str
@@ -117,6 +121,8 @@ class CreateRatingRequest(BaseModel):
 
 
 class MarketplaceRatingResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     item_id: str
     user_id: str
@@ -130,6 +136,8 @@ class MarketplaceRatingResponse(BaseModel):
 # --- Clone ---
 
 class CloneResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     source_item_id: str
     target_tenant_id: str

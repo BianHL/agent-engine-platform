@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class CreateTenantRequest(BaseModel):
@@ -24,6 +24,8 @@ class CreateTenantRequest(BaseModel):
 
 
 class TenantResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     name: str
     code: str
@@ -81,6 +83,8 @@ class DepartmentCreate(BaseModel):
 
 
 class DepartmentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     tenant_id: str
     name: str

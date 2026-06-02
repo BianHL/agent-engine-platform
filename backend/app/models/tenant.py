@@ -1,7 +1,7 @@
 """Tenant and Organization models."""
 from datetime import UTC, datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, String
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base, EnterpriseMixin, generate_uuid
@@ -41,7 +41,7 @@ class TenantModel(Base, EnterpriseMixin):
     departments = relationship("DepartmentModel", back_populates="tenant", cascade="all, delete-orphan")
     tags = relationship("TagModel", back_populates="tenant", cascade="all, delete-orphan")
     marketplace_items = relationship("MarketplaceItem", back_populates="tenant", cascade="all, delete-orphan")
-    parent = relationship("TenantModel", remote_side="TenantModel.id", backref="children")
+    parent = relationship("TenantModel", remote_side=[id], backref="children")
 
 
 class DepartmentModel(Base, EnterpriseMixin):
@@ -61,7 +61,7 @@ class DepartmentModel(Base, EnterpriseMixin):
 
     # relationships
     tenant = relationship("TenantModel", back_populates="departments")
-    parent = relationship("DepartmentModel", remote_side="DepartmentModel.id", backref="children")
+    parent = relationship("DepartmentModel", remote_side=[id], backref="children")
 
 
 class TagModel(Base):
@@ -76,6 +76,10 @@ class TagModel(Base):
     created_by = Column(String(36), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
 
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "name", name="uk_tags_tenant_name"),
+    )
+
     # relationships
     tenant = relationship("TenantModel", back_populates="tags")
     bindings = relationship("TagBindingModel", back_populates="tag", cascade="all, delete-orphan")
@@ -89,6 +93,10 @@ class TagBindingModel(Base):
     target_type = Column(String(30), nullable=False)
     target_id = Column(String(36), nullable=False, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
+
+    __table_args__ = (
+        UniqueConstraint("tag_id", "target_type", "target_id", name="uk_tag_target"),
+    )
 
     # relationships
     tag = relationship("TagModel", back_populates="bindings")

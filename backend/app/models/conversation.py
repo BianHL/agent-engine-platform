@@ -1,7 +1,7 @@
 """Conversation and Message models."""
 from datetime import UTC, datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, JSON, Numeric, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, JSON, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base, generate_uuid
@@ -83,6 +83,10 @@ class ConversationVariableModel(Base):
     # relationships
     conversation = relationship("ConversationModel", back_populates="variables")
 
+    __table_args__ = (
+        UniqueConstraint("conversation_id", "key", name="uk_cv"),
+    )
+
 
 class MessageFeedbackModel(Base):
     __tablename__ = "message_feedbacks"
@@ -98,6 +102,10 @@ class MessageFeedbackModel(Base):
 
     # relationships
     message = relationship("MessageModel", back_populates="feedbacks")
+
+    __table_args__ = (
+        UniqueConstraint("message_id", "user_id", name="uk_mf"),
+    )
 
 
 class MessageAnnotationModel(Base):

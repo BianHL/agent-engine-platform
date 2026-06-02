@@ -1,7 +1,7 @@
 """Workflow related models."""
 from datetime import UTC, datetime
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, JSON, Numeric, String, Text
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, JSON, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base, EnterpriseMixin, OptimisticLockMixin, generate_uuid
@@ -57,6 +57,10 @@ class WorkflowNodeModel(Base):
 
     # relationships
     workflow = relationship("WorkflowModel", back_populates="nodes")
+
+    __table_args__ = (
+        UniqueConstraint("workflow_id", "node_id", name="uk_wn_node"),
+    )
 
 
 class WorkflowEdgeModel(Base):
