@@ -481,6 +481,7 @@ async def rate_plugin(
     rating = PluginRatingModel(
         plugin_id=plugin_id,
         user_id=user["id"],
+        tenant_id=user["tenant_id"],
         score=data.score,
         comment=data.comment,
     )

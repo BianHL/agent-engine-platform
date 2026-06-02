@@ -345,7 +345,7 @@ async def chat_with_file(
         role="user",
         content=full_message,
         meta_info={"file": {"id": file_id, "filename": filename, "size": len(content)}}))
-    db.add(MessageModel(conversation_id=conversation_id, role="assistant", content=content_text))
+    db.add(MessageModel(conversation_id=conversation_id, tenant_id=user["tenant_id"], role="assistant", content=content_text))
     await db.flush()
 
     return {
