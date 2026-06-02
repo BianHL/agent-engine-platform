@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { z } from 'zod';
 
 // Common validation schemas
@@ -276,6 +276,7 @@ export const customRules = {
 // Form validation hook
 export function useFormValidation<T>(schema: z.ZodType<T>) {
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const validate = (data: unknown): boolean => {
     const result = validateForm(schema, data);
@@ -287,13 +288,69 @@ export function useFormValidation<T>(schema: z.ZodType<T>) {
     return true;
   };
 
-  const clearErrors = () => setErrors({});
+  const validateField = useCallback(
+    (field: string, allData: Record<string, unknown>) => {
+      const result = schema.safeParse(allData);
+      setErrors((prev) => {
+        const next = { ...prev };
+        if (!result.success) {
+          const fieldErrors = result.error.issues.filter(
+            (issue) => issue.path[0] === field
+          );
+          if (fieldErrors.length > 0) {
+            next[field] = fieldErrors[0].message;
+          } else {
+            delete next[field];
+          }
+        } else {
+          delete next[field];
+        }
+        return next;
+      });
+    },
+    [schema]
+  );
 
-  const getFieldError = (field: string): string | undefined => errors[field];
+  const handleBlur = useCallback(
+    (field: string) =>
+      (allData: Record<string, unknown>) => {
+        setTouched((prev) => ({ ...prev, [field]: true }));
+        validateField(field, allData);
+      },
+    [validateField]
+  );
+
+  const clearErrors = () => {
+    setErrors({});
+    setTouched({});
+  };
+
+  const clearFieldError = (field: string) =>
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+
+  const getFieldError = (field: string): string | undefined =>
+    touched[field] ? errors[field] : undefined;
+
+  const isFieldTouched = (field: string): boolean => !!touched[field];
 
   const hasErrors = Object.keys(errors).length > 0;
 
-  return { errors, validate, clearErrors, getFieldError, hasErrors };
+  return {
+    errors,
+    touched,
+    validate,
+    validateField,
+    handleBlur,
+    clearErrors,
+    clearFieldError,
+    getFieldError,
+    isFieldTouched,
+    hasErrors,
+  };
 }
 
 

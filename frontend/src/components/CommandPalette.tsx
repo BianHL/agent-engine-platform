@@ -8,7 +8,7 @@ import {
   RocketOutlined, CodeOutlined, ImportOutlined, FireOutlined,
 } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Typography } from 'antd';
 const { Text } = Typography;
 
@@ -33,6 +33,12 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const shouldReduceMotion = useReducedMotion();
+
+  const overlayTransition = shouldReduceMotion ? { duration: 0 } : { duration: 0.15 };
+  const contentTransition = shouldReduceMotion
+    ? { duration: 0 }
+    : { duration: 0.2, ease: [0.25, 1, 0.5, 1] as [number, number, number, number] };
 
   const commands: CommandItem[] = useMemo(() => [
     // Navigation
@@ -138,7 +144,7 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
+          transition={overlayTransition}
           className="fixed inset-0 z-[1000] flex items-start justify-center pt-[15vh]"
           style={{ background: 'var(--ae-overlay)' }}
           onClick={onClose}
@@ -147,7 +153,7 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
             initial={{ opacity: 0, scale: 0.97, y: -8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: -8 }}
-            transition={{ duration: 0.2, ease: [0.25, 1, 0.5, 1] }}
+            transition={contentTransition}
             className="w-full max-w-[640px] mx-4 overflow-hidden"
             style={{
               background: 'var(--ae-panel-strong)',

@@ -18,10 +18,11 @@ export function showToast(message: string, type: 'success' | 'error' | 'warning'
   const id = Date.now().toString();
   toasts.push({ id, message, type });
   notify();
+  const dismissMs = type === 'error' ? 8000 : 4000;
   setTimeout(() => {
     toasts = toasts.filter(t => t.id !== id);
     notify();
-  }, 3000);
+  }, dismissMs);
 }
 
 export function ToastContainer() {
@@ -37,6 +38,9 @@ export function ToastContainer() {
 
   return (
     <div
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
       style={{
         position: 'fixed',
         top: 20,

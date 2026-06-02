@@ -21,11 +21,11 @@ export default function ProgressIndicator({ current, total }: ProgressIndicatorP
         display: 'flex',
         alignItems: 'center',
         gap: 12,
-        background: '#fff',
+        background: 'var(--ae-panel-strong)',
         padding: '10px 20px',
         borderRadius: 40,
-        boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
-        border: '1px solid #f0f0f0',
+        boxShadow: 'var(--ae-shadow)',
+        border: '1px solid var(--ae-line)',
       }}
     >
       {/* Step dots */}
@@ -35,7 +35,7 @@ export default function ProgressIndicator({ current, total }: ProgressIndicatorP
             key={i}
             animate={{
               scale: i === current ? 1.2 : 1,
-              background: i === current ? '#1890ff' : i < current ? '#52c41a' : '#e8e8e8',
+              background: i === current ? 'var(--ae-accent-olive)' : i < current ? 'var(--ae-success)' : 'var(--ae-line)',
             }}
             transition={{ duration: 0.2 }}
             style={{
@@ -50,7 +50,7 @@ export default function ProgressIndicator({ current, total }: ProgressIndicatorP
       {/* Step text */}
       <div style={{
         fontSize: 12,
-        color: '#666',
+        color: 'var(--ae-muted)',
         whiteSpace: 'nowrap',
         minWidth: 50,
         textAlign: 'right',
@@ -62,7 +62,7 @@ export default function ProgressIndicator({ current, total }: ProgressIndicatorP
       <div style={{
         width: 60,
         height: 4,
-        background: '#f0f0f0',
+        background: 'var(--ae-line)',
         borderRadius: 2,
         overflow: 'hidden',
       }}>
@@ -72,7 +72,7 @@ export default function ProgressIndicator({ current, total }: ProgressIndicatorP
           transition={{ duration: 0.3, ease: 'easeOut' }}
           style={{
             height: '100%',
-            background: 'linear-gradient(90deg, #1890ff, #722ed1)',
+            background: 'linear-gradient(90deg, var(--ae-accent-olive), var(--ae-accent-gold))',
             borderRadius: 2,
           }}
         />

@@ -25,7 +25,7 @@ async def list_conversations(
     user: dict = Depends(get_current_user)):
     """List conversations for the current user, optionally filtered by agent."""
     svc = ConversationService(db)
-    return await svc.list(
+    return await svc.list_conversations(
         tenant_id=user["tenant_id"],
         user_id=user["id"],
         page=page,

@@ -12,12 +12,12 @@ version: '3.8'
 #   生产环境 (资源限制):
 #     docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 #
-#   快速启动 (仅基础设施 + 应用):
+#   快速启动:
 #     docker-compose up -d
 #
-# 基础设施 profile:
-#   - full        : 所有服务自托管 (MySQL + Redis + Milvus + ES)
-#   - external-db : 仅 Neo4j + 应用服务 (其余由外部提供)
+# 说明:
+#   - MySQL / Redis / Elasticsearch / Milvus 为外部依赖
+#   - 仅 Neo4j 随 Docker 启动
 # ============================================
 
 x-app-common: &app-common
@@ -26,12 +26,6 @@ x-app-common: &app-common
     dockerfile: Dockerfile
   env_file: .env.docker
   depends_on:
-    mysql:
-      condition: service_healthy
-      required: false
-    redis:
-      condition: service_healthy
-      required: false
     neo4j:
       condition: service_healthy
   volumes:
@@ -40,63 +34,8 @@ x-app-common: &app-common
 
 services:
   # ========================================
-  # 基础设施（自托管，可选）
+  # 基础设施（仅 Neo4j）
   # ========================================
-
-  mysql:
-    image: mysql:8.0
-    container_name: agent-engine-mysql
-    profiles: ["full"]
-    environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-dev_only}
-      MYSQL_DATABASE: ${DB_NAME:-agent_engine}
-      MYSQL_CHARACTER_SET_SERVER: utf8mb4
-      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
-    ports:
-      - "127.0.0.1:${DB_PORT:-3306}:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-dev_only}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-  redis:
-    image: redis:7-alpine
-    container_name: agent-engine-redis
-    profiles: ["full"]
-    command: redis-server --requirepass ${REDIS_PASSWORD:-dev_only} --appendonly yes
-    ports:
-      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-dev_only}", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  milvus-standalone:
-    image: milvusdb/milvus:v2.4-latest
-    container_name: agent-engine-milvus
-    profiles: ["full"]
-    environment:
-      ETCD_USE_EMBED: "true"
-      COMMON_STORAGETYPE: local
-    ports:
-      - "127.0.0.1:${MILVUS_PORT:-19530}:19530"
-      - "127.0.0.1:9091:9091"
-    volumes:
-      - milvus_data:/var/lib/milvus
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
-      interval: 30s
-      start_period: 90s
-      timeout: 20s
-      retries: 3
 
   neo4j:
     image: neo4j:5-community
@@ -115,25 +54,6 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
-
-  elasticsearch:
-    image: elasticsearch:8.12.0
-    container_name: agent-engine-es
-    profiles: ["full"]
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms${ES_HEAP_MIN:-512m} -Xmx${ES_HEAP_MAX:-512m}"
-    ports:
-      - "127.0.0.1:${ES_PORT:-9200}:9200"
-    volumes:
-      - es_data:/usr/share/elasticsearch/data
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
 
   # ========================================
   # 应用服务
@@ -170,10 +90,10 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://backend:8000}
     container_name: agent-engine-frontend
     environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://backend:8000}
     ports:
       - "127.0.0.1:${FRONTEND_PORT:-3000}:3000"
     depends_on:
@@ -209,9 +129,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  mysql_data:
-  redis_data:
-  milvus_data:
   neo4j_data:
-  es_data:
   upload_data:

@@ -42,6 +42,7 @@ export default function StatusBadge({ status, text, size = 'md' }: StatusBadgePr
       }}
     >
       <span
+        aria-label={`Status: ${displayText}`}
         className={status === 'processing' ? 'status-pulse' : ''}
         style={{
           width: 7,

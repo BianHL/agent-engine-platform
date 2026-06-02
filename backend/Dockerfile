@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Non-root user for security
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup \
+RUN groupadd -r appgroup && useradd -r -g appgroup appuser \
     && mkdir -p /app/uploads && chown -R appuser:appgroup /app/uploads
 USER appuser
 

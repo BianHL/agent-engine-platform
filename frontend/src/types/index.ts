@@ -94,6 +94,7 @@ export interface ModelProvider {
 
 export interface ModelConfig {
   id: string;
+  provider_id: string;
   model_name: string;
   model_type: string;
   display_name: string;

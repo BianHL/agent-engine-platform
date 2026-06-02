@@ -153,10 +153,12 @@ class ApiClient {
       async (error: AxiosError) => {
         const config = error.config;
 
-        // Handle 401 - redirect to login
+        // Handle 401 - redirect to login (avoid loop when already on login page)
         if (error.response?.status === 401) {
           localStorage.removeItem('token');
-          window.location.href = '/login';
+          if (!window.location.pathname.startsWith('/login')) {
+            window.location.href = '/login';
+          }
           return Promise.reject(error);
         }
 
@@ -411,7 +413,7 @@ class ApiClient {
 
   // Workflows
   async listWorkflows(page = 1, size = 20): Promise<PaginatedResponse<any>> {
-    const resp = await this.client.get('/workflows', { params: { page, size } });
+    const resp = await this.client.get('/workflows/', { params: { page, size } });
     return resp.data;
   }
 
@@ -421,7 +423,7 @@ class ApiClient {
   }
 
   async createWorkflow(data: { name: string; description?: string; nodes: any[]; edges: any[] }): Promise<any> {
-    const resp = await this.client.post('/workflows', data);
+    const resp = await this.client.post('/workflows/', data);
     return resp.data;
   }
 

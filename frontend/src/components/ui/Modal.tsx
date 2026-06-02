@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 
 interface ModalProps {
   open: boolean;
@@ -18,6 +18,65 @@ export default function Modal({
   footer,
   className = '',
 }: ModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<Element | null>(null);
+  const titleId = React.useId();
+
+  // Save trigger element and handle Escape
+  useEffect(() => {
+    if (open) {
+      triggerRef.current = document.activeElement;
+      // Focus first focusable element inside modal
+      setTimeout(() => {
+        const focusable = dialogRef.current?.querySelector<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        focusable?.focus();
+      }, 50);
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          onClose();
+        }
+        if (e.key === 'Tab' && dialogRef.current) {
+          const focusable = Array.from(
+            dialogRef.current.querySelectorAll<HTMLElement>(
+              'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            )
+          ).filter((el) => !el.matches(':disabled') && el.offsetParent !== null);
+
+          if (focusable.length === 0) return;
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+
+          if (e.shiftKey) {
+            if (document.activeElement === first) {
+              e.preventDefault();
+              last.focus();
+            }
+          } else {
+            if (document.activeElement === last) {
+              e.preventDefault();
+              first.focus();
+            }
+          }
+        }
+      };
+      document.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+        document.body.style.overflow = '';
+        // Return focus to trigger
+        if (triggerRef.current instanceof HTMLElement) {
+          triggerRef.current.focus();
+        }
+      };
+    }
+  }, [open, onClose]);
+
   if (!open) return null;
 
   return (
@@ -37,6 +96,10 @@ export default function Modal({
       }}
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         className={`modal-content ${className}`}
         style={{
           width: '90%',
@@ -51,8 +114,10 @@ export default function Modal({
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-          <h3 style={{ margin: 0, fontFamily: 'var(--ae-font-family-serif)', fontSize: 22 }}>{title}</h3>
+          <h3 id={titleId} style={{ margin: 0, fontFamily: 'var(--ae-font-family-serif)', fontSize: 22 }}>{title}</h3>
           <button
+            type="button"
+            aria-label="Close dialog"
             onClick={onClose}
             style={{
               width: 32, height: 32, borderRadius: 'var(--ae-radius-sm)',

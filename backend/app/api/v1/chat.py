@@ -35,8 +35,8 @@ async def _get_agent(db: AsyncSession, agent_id: str, tenant_id: str) -> AgentMo
     agent = result.scalar_one_or_none()
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
-    if agent.status != "published":
-        raise HTTPException(status_code=400, detail="Agent is not published")
+    if agent.status not in ("published", "draft"):
+        raise HTTPException(status_code=400, detail="Agent is not available for chat")
     return agent
 
 
@@ -125,8 +125,8 @@ async def chat_completions(
         conv_id = body.conversation_id
 
     # Save messages
-    db.add(MessageModel(conversation_id=conv_id, role="user", content=last_msg))
-    db.add(MessageModel(conversation_id=conv_id, role="assistant", content=content))
+    db.add(MessageModel(conversation_id=conv_id, tenant_id=user["tenant_id"], role="user", content=last_msg))
+    db.add(MessageModel(conversation_id=conv_id, tenant_id=user["tenant_id"], role="assistant", content=content))
     await db.flush()
 
     return {
@@ -177,7 +177,7 @@ async def chat_stream(
     else:
         conv_id = body.conversation_id
 
-    db.add(MessageModel(conversation_id=conv_id, role="user", content=last_msg))
+    db.add(MessageModel(conversation_id=conv_id, tenant_id=user["tenant_id"], role="user", content=last_msg))
     await db.flush()
 
     llm_adapter = getattr(request.app.state, "llm_adapter", None)
@@ -217,9 +217,8 @@ async def chat_stream(
             response_text = "".join(full_response)
             output_safety = await safety.check_output(response_text)
             final_content = output_safety.filtered_content or response_text
-            db.add(MessageModel(conversation_id=conv_id, role="assistant", content=final_content))
-            if db.new or db.dirty or db.deleted:
-                await db.commit()
+            db.add(MessageModel(conversation_id=conv_id, tenant_id=user["tenant_id"], role="assistant", content=final_content))
+            await db.commit()
 
             yield {
                 "event": "done",

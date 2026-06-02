@@ -13,17 +13,17 @@ interface OnboardingModalProps {
 
 const features = [
   {
-    icon: <RocketOutlined style={{ fontSize: 24, color: '#1890ff' }} />,
+    icon: <RocketOutlined style={{ fontSize: 24, color: 'var(--ae-accent-olive)' }} />,
     title: 'AI Agents',
     desc: 'Build intelligent agents powered by LLMs',
   },
   {
-    icon: <ThunderboltOutlined style={{ fontSize: 24, color: '#faad14' }} />,
+    icon: <ThunderboltOutlined style={{ fontSize: 24, color: 'var(--ae-accent-gold)' }} />,
     title: 'Workflows',
     desc: 'Automate complex multi-step processes',
   },
   {
-    icon: <SafetyOutlined style={{ fontSize: 24, color: '#52c41a' }} />,
+    icon: <SafetyOutlined style={{ fontSize: 24, color: 'var(--ae-success)' }} />,
     title: 'Knowledge Base',
     desc: 'Ground agents with your domain data',
   },
@@ -70,7 +70,7 @@ export default function OnboardingModal({ onStart, onSkip }: OnboardingModalProp
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           style={{
-            background: '#fff',
+            background: 'var(--ae-panel-strong)',
             borderRadius: 16,
             boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
             width: '100%',
@@ -80,7 +80,7 @@ export default function OnboardingModal({ onStart, onSkip }: OnboardingModalProp
         >
           {/* Header gradient banner */}
           <div style={{
-            background: 'linear-gradient(135deg, #1890ff 0%, #722ed1 100%)',
+            background: 'linear-gradient(135deg, var(--ae-accent-olive) 0%, var(--ae-accent-gold) 100%)',
             padding: '40px 32px 32px',
             textAlign: 'center',
           }}>
@@ -122,9 +122,9 @@ export default function OnboardingModal({ onStart, onSkip }: OnboardingModalProp
                     flex: 1,
                     textAlign: 'center',
                     padding: '16px 8px',
-                    background: '#fafafa',
+                    background: 'var(--ae-bg-secondary)',
                     borderRadius: 10,
-                    border: '1px solid #f0f0f0',
+                    border: '1px solid var(--ae-line)',
                   }}
                 >
                   <div style={{ marginBottom: 8 }}>{f.icon}</div>

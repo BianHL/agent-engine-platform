@@ -48,7 +48,7 @@ class ConversationService:
             "updated_at": conv.updated_at.isoformat() if conv.updated_at else None,
         }
 
-    async def list(
+    async def list_conversations(
         self, tenant_id: str, user_id: Optional[str] = None, page: int = 1, size: int = 20
     ) -> dict:
         filters = [ConversationModel.tenant_id == tenant_id]

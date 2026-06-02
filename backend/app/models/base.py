@@ -1,5 +1,6 @@
 """SQLAlchemy Base class and common utilities."""
 import uuid
+from datetime import datetime
 
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, Float, Integer, String
 from sqlalchemy.orm import DeclarativeBase
@@ -17,8 +18,8 @@ class Base(DeclarativeBase):
 
 class TimestampMixin:
     """Mixin that adds created_at and updated_at timestamps."""
-    created_at = Column(DateTime, nullable=True)
-    updated_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class SoftDeleteMixin:

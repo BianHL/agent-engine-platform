@@ -161,7 +161,7 @@ export default function OnboardingTooltip({
               <rect
                 width="100%"
                 height="100%"
-                fill="rgba(0,0,0,0.5)"
+                fill="var(--ae-overlay)"
                 mask="url(#onboarding-mask)"
               />
               {/* Animated border around target */}
@@ -172,7 +172,7 @@ export default function OnboardingTooltip({
                 height={highlightRect.height + 12}
                 rx={8}
                 fill="none"
-                stroke="#1890ff"
+                stroke="var(--ae-accent-olive)"
                 strokeWidth={2}
                 strokeDasharray="8 4"
                 style={{ animation: 'onboarding-pulse 2s ease-in-out infinite' }}
@@ -203,9 +203,9 @@ export default function OnboardingTooltip({
           >
             <div
               style={{
-                background: '#fff',
+                background: 'var(--ae-panel-strong)',
                 borderRadius: 12,
-                boxShadow: '0 12px 40px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.1)',
+                boxShadow: 'var(--ae-shadow)',
                 padding: '20px 20px 16px',
                 position: 'relative',
               }}
@@ -220,7 +220,7 @@ export default function OnboardingTooltip({
                     transform: 'translateX(-50%) rotate(45deg)',
                     width: 12,
                     height: 12,
-                    background: '#fff',
+                    background: 'var(--ae-panel-strong)',
                     boxShadow: position.placement === 'bottom'
                       ? '-2px -2px 4px rgba(0,0,0,0.06)'
                       : '2px 2px 4px rgba(0,0,0,0.06)',
@@ -238,7 +238,7 @@ export default function OnboardingTooltip({
                   position: 'absolute',
                   top: 8,
                   right: 8,
-                  color: '#999',
+                  color: 'var(--ae-muted)',
                   width: 28,
                   height: 28,
                 }}
@@ -250,8 +250,8 @@ export default function OnboardingTooltip({
                   width: 28,
                   height: 28,
                   borderRadius: '50%',
-                  background: '#1890ff',
-                  color: '#fff',
+                  background: 'var(--ae-accent-olive)',
+                  color: 'var(--ae-text-inverse)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -265,7 +265,7 @@ export default function OnboardingTooltip({
               </div>
 
               {/* Description */}
-              <Text style={{ display: 'block', color: '#666', marginBottom: 16, lineHeight: 1.6 }}>
+              <Text style={{ display: 'block', color: 'var(--ae-muted)', marginBottom: 16, lineHeight: 1.6 }}>
                 {step.description}
               </Text>
 

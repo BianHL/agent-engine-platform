@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, Form, Input, Select, Button, Typography, message, Spin, Space, Tag } from 'antd';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { Agent } from '@/types';
+import { Agent, ModelProvider, ModelConfig } from '@/types';
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -16,6 +16,30 @@ export default function EditAgentPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [agent, setAgent] = useState<Agent | null>(null);
+  const [providers, setProviders] = useState<ModelProvider[]>([]);
+  const [configs, setConfigs] = useState<ModelConfig[]>([]);
+  const [fetching, setFetching] = useState(true);
+
+  const selectedProvider = Form.useWatch('model_provider', form);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setFetching(true);
+        const [p, c] = await Promise.all([api.listProviders(), api.listModelConfigs()]);
+        if (!cancelled) {
+          setProviders(p);
+          setConfigs(c.filter((m: ModelConfig) => m.enabled));
+        }
+      } catch {
+        message.error('Failed to load models');
+      } finally {
+        if (!cancelled) setFetching(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (agentId) {
@@ -35,6 +59,17 @@ export default function EditAgentPage() {
     }
   }, [agentId, form]);
 
+  const providerOptions = providers
+    .filter((p) => p.status === 'active')
+    .map((p) => ({ label: p.name, value: p.provider_type }));
+
+  const modelOptions = configs
+    .filter((m) => {
+      const provider = providers.find((p) => p.provider_type === selectedProvider);
+      return provider ? m.provider_id === provider.id : false;
+    })
+    .map((m) => ({ label: m.display_name || m.model_name, value: m.model_name }));
+
   const onFinish = async (values: any) => {
     setSaving(true);
     try {
@@ -48,7 +83,7 @@ export default function EditAgentPage() {
     }
   };
 
-  if (loading) return <Spin size="large" style={{ display: 'block', margin: '100px auto' }} />;
+  if (loading || fetching) return <Spin size="large" style={{ display: 'block', margin: '100px auto' }} />;
   if (!agent) return <div>Agent not found</div>;
 
   return (
@@ -69,22 +104,18 @@ export default function EditAgentPage() {
             <TextArea rows={2} placeholder="What does this agent do?" />
           </Form.Item>
           <Form.Item name="model_provider" label="Model Provider" rules={[{ required: true }]}>
-            <Select options={[
-              { label: 'OpenAI', value: 'openai' },
-              { label: 'Anthropic', value: 'anthropic' },
-              { label: 'DeepSeek', value: 'deepseek' },
-              { label: 'Ollama', value: 'ollama' },
-            ]} />
+            <Select
+              placeholder="Select a provider"
+              options={providerOptions}
+              onChange={() => form.setFieldValue('model_name', undefined)}
+            />
           </Form.Item>
           <Form.Item name="model_name" label="Model" rules={[{ required: true }]}>
-            <Select options={[
-              { label: 'GPT-4o', value: 'gpt-4o' },
-              { label: 'GPT-4o Mini', value: 'gpt-4o-mini' },
-              { label: 'Claude 3.5 Sonnet', value: 'claude-3-5-sonnet-20241022' },
-              { label: 'Claude 3 Haiku', value: 'claude-3-haiku-20240307' },
-              { label: 'DeepSeek V3', value: 'deepseek-chat' },
-              { label: 'DeepSeek R1', value: 'deepseek-reasoner' },
-            ]} />
+            <Select
+              placeholder="Select a model"
+              options={modelOptions}
+              disabled={!selectedProvider || modelOptions.length === 0}
+            />
           </Form.Item>
           <Form.Item name="system_prompt" label="System Prompt" rules={[{ required: true, message: 'Please enter system prompt' }]}>
             <TextArea rows={6} placeholder="You are a helpful assistant..." />

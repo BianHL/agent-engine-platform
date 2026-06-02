@@ -191,12 +191,11 @@ async def get_me(user: dict = Depends(get_current_user)):
 @router.get("/sso/providers")
 async def list_sso_providers(
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
 ):
-    """List configured SSO providers for the current tenant."""
+    """List configured SSO providers. Public endpoint — no auth required."""
     stmt = (
         select(OAuthProviderModel)
-        .where(OAuthProviderModel.tenant_id == user["tenant_id"])
+        .where(OAuthProviderModel.enabled == True)
         .order_by(OAuthProviderModel.created_at)
     )
     result = await db.execute(stmt)

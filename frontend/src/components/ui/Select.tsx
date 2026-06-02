@@ -23,14 +23,19 @@ export default function Select({
   placeholder = 'Select...',
   className = '',
 }: SelectProps) {
+  const selectId = React.useId();
+  const labelId = label ? `${selectId}-label` : undefined;
+
   return (
     <div className={className} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       {label && (
-        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ae-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+        <label id={labelId} htmlFor={selectId} style={{ fontSize: 12, fontWeight: 600, color: 'var(--ae-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
           {label}
         </label>
       )}
       <select
+        id={selectId}
+        aria-labelledby={labelId}
         value={value}
         onChange={(e) => onChange?.(e.target.value)}
         style={{

@@ -320,6 +320,27 @@ CREATE TABLE IF NOT EXISTS agent_tags (
     INDEX idx_at_agent (agent_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Agent标签关联表';
 
+-- Agent发布渠道表
+CREATE TABLE IF NOT EXISTS publish_channels (
+    id VARCHAR(36) PRIMARY KEY,
+    tenant_id VARCHAR(36) NOT NULL COMMENT '所属租户',
+    agent_id VARCHAR(36) NOT NULL COMMENT '所属Agent',
+    type VARCHAR(20) NOT NULL COMMENT '渠道类型',
+    name VARCHAR(100) NOT NULL COMMENT '渠道名称',
+    status VARCHAR(20) NOT NULL DEFAULT 'active' COMMENT '状态',
+    config JSON NULL COMMENT '配置',
+    api_key_prefix VARCHAR(10) NULL COMMENT 'API密钥前缀',
+    total_calls INT NOT NULL DEFAULT 0 COMMENT '总调用次数',
+    calls_today INT NOT NULL DEFAULT 0 COMMENT '今日调用次数',
+    created_by VARCHAR(36) NULL COMMENT '创建者',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at DATETIME NULL,
+    INDEX idx_pc_tenant (tenant_id),
+    INDEX idx_pc_agent (agent_id),
+    INDEX idx_pc_deleted (deleted_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Agent发布渠道表';
+
 -- ============================================================
 -- 模型提供商与配置
 -- ============================================================
@@ -347,7 +368,8 @@ CREATE TABLE IF NOT EXISTS model_providers (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
-    version INT NOT NULL DEFAULT 1,
+    version INT NOT NULL DEFAULT 1 COMMENT '版本号',
+    version_lock INT NOT NULL DEFAULT 1 COMMENT '乐观锁',
     INDEX idx_providers_tenant (tenant_id),
     INDEX idx_providers_status (status),
     INDEX idx_providers_deleted (deleted_at)
@@ -376,7 +398,7 @@ CREATE TABLE IF NOT EXISTS model_configs (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
-    version INT NOT NULL DEFAULT 1,
+    version_lock INT NOT NULL DEFAULT 1 COMMENT '乐观锁',
     INDEX idx_configs_tenant (tenant_id),
     INDEX idx_configs_provider (provider_id),
     INDEX idx_configs_type (model_type),
@@ -563,6 +585,7 @@ CREATE TABLE IF NOT EXISTS messages (
     citation_sources JSON NULL COMMENT '引用来源列表',
     -- 质量评估
     feedback_score VARCHAR(10) NULL COMMENT 'positive/negative',
+    metadata JSON NULL COMMENT '元数据',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_msg_conversation (conversation_id),
     INDEX idx_msg_tenant (tenant_id),
@@ -574,8 +597,8 @@ CREATE TABLE IF NOT EXISTS messages (
 CREATE TABLE IF NOT EXISTS conversation_variables (
     id VARCHAR(36) PRIMARY KEY,
     conversation_id VARCHAR(36) NOT NULL,
-    key VARCHAR(100) NOT NULL COMMENT '变量名',
-    value TEXT NULL COMMENT '变量值',
+    `key` VARCHAR(100) NOT NULL COMMENT '变量名',
+    `value` TEXT NULL COMMENT '变量值',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uk_cv (conversation_id, `key`),
@@ -872,7 +895,8 @@ CREATE TABLE IF NOT EXISTS tools (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
-    version INT NOT NULL DEFAULT 1,
+    version INT NOT NULL DEFAULT 1 COMMENT '版本号',
+    version_lock INT NOT NULL DEFAULT 1 COMMENT '乐观锁',
     INDEX idx_tools_tenant (tenant_id),
     INDEX idx_tools_type (tool_type),
     INDEX idx_tools_deleted (deleted_at)
@@ -948,7 +972,7 @@ CREATE TABLE IF NOT EXISTS model_usage_daily (
     tenant_id VARCHAR(36) NOT NULL,
     user_id VARCHAR(36) NULL COMMENT '用户维度聚合',
     agent_id VARCHAR(36) NULL COMMENT 'Agent维度聚合',
-    date DATE NOT NULL COMMENT '统计日期',
+    `date` DATE NOT NULL COMMENT '统计日期',
     model_provider VARCHAR(50) NOT NULL,
     model_name VARCHAR(100) NOT NULL,
     -- 聚合指标
@@ -963,9 +987,9 @@ CREATE TABLE IF NOT EXISTS model_usage_daily (
     p99_latency_ms INT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_model_usage_daily (tenant_id, date, model_provider, model_name, user_id, agent_id),
+    UNIQUE KEY uq_model_usage_daily (tenant_id, `date`, model_provider, model_name, user_id, agent_id),
     INDEX idx_mud_tenant (tenant_id),
-    INDEX idx_mud_date (date),
+    INDEX idx_mud_date (`date`),
     INDEX idx_mud_model (model_provider, model_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='模型使用量日聚合表';
 
@@ -973,7 +997,7 @@ CREATE TABLE IF NOT EXISTS model_usage_daily (
 CREATE TABLE IF NOT EXISTS tenant_usage_monthly (
     id VARCHAR(36) PRIMARY KEY,
     tenant_id VARCHAR(36) NOT NULL,
-    year_month VARCHAR(7) NOT NULL COMMENT '格式：2026-05',
+    `year_month` VARCHAR(7) NOT NULL COMMENT '格式：2026-05',
     -- 聚合指标
     total_requests INT NOT NULL DEFAULT 0,
     total_input_tokens BIGINT NOT NULL DEFAULT 0,
@@ -992,7 +1016,7 @@ CREATE TABLE IF NOT EXISTS tenant_usage_monthly (
     invoiced_at DATETIME NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uk_tenant_month (tenant_id, year_month)
+    UNIQUE KEY uk_tenant_month (tenant_id, `year_month`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='租户使用量月聚合表';
 
 -- ============================================================
@@ -1537,7 +1561,7 @@ VALUES ('default', '默认租户', 'default', 'active', 100, 1000, 100,
 -- 管理员用户
 INSERT IGNORE INTO users (id, tenant_id, username, email, hashed_password, role, status, nickname)
 VALUES ('admin-user', 'default', 'admin', 'admin@example.com',
-    '$2b$12$LJ3m4ys3Lz0YBGQxKvGqeOBUOzHMHHMFGCoN7G7F8J3YlQ3Yq5K2e', 'admin', 'active', '系统管理员');
+    '$2b$12$OAXZMpEepcA4lgIKM8sZpe1xP/2/IopCINSrnHJ2trO8Sry6KYtlC', 'admin', 'active', '系统管理员');
 
 -- 系统角色
 INSERT IGNORE INTO roles (id, tenant_id, name, code, description, is_system, is_default, priority, data_scope) VALUES

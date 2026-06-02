@@ -15,15 +15,23 @@ export default function Input({
   className = '',
   ...props
 }: InputProps) {
+  const inputId = React.useId();
+  const errorId = error ? `${inputId}-error` : undefined;
+  const hintId = hint && !error ? `${inputId}-hint` : undefined;
+  const describedBy = errorId || hintId;
+
   return (
     <div className={className} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       {label && (
-        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ae-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+        <label htmlFor={inputId} style={{ fontSize: 12, fontWeight: 600, color: 'var(--ae-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
           {label}
         </label>
       )}
       <input
         {...props}
+        id={inputId}
+        aria-describedby={describedBy}
+        aria-invalid={!!error}
         className={`ae-input ${error ? 'ae-input-error' : ''}`}
         style={{
           padding: '12px 14px',
@@ -39,10 +47,10 @@ export default function Input({
         }}
       />
       {error && (
-        <span style={{ fontSize: 12, color: 'var(--ae-danger)', marginTop: 2 }}>{error}</span>
+        <span id={errorId} role="alert" style={{ fontSize: 12, color: 'var(--ae-danger)', marginTop: 2 }}>{error}</span>
       )}
       {hint && !error && (
-        <span style={{ fontSize: 12, color: 'var(--ae-muted)', marginTop: 2 }}>{hint}</span>
+        <span id={hintId} style={{ fontSize: 12, color: 'var(--ae-muted)', marginTop: 2 }}>{hint}</span>
       )}
       <style jsx>{`
         .ae-input:focus {

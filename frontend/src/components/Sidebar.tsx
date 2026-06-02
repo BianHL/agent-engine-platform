@@ -1,5 +1,5 @@
 'use client';
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Drawer } from 'antd';
 import {
   DashboardOutlined, RobotOutlined, DatabaseOutlined, SettingOutlined,
@@ -7,8 +7,7 @@ import {
   TeamOutlined, ExperimentOutlined, ThunderboltOutlined, ApiOutlined,
   ApartmentOutlined, SafetyOutlined, UserOutlined, ShopOutlined,
   FileOutlined, CheckCircleOutlined, BarChartOutlined, EyeOutlined,
-  ImportOutlined, CodeOutlined, RocketOutlined, MenuFoldOutlined,
-  DownOutlined, RightOutlined, KeyOutlined,
+  ImportOutlined, CodeOutlined, RocketOutlined, RightOutlined, KeyOutlined,
 } from '@ant-design/icons';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -17,83 +16,92 @@ interface SidebarProps {
   onMobileClose?: () => void;
 }
 
-interface MenuItemData {
+interface MenuChild {
+  key: string;
+  label: string;
+}
+
+interface MenuGroup {
   key: string;
   icon: React.ReactNode;
   label: string;
-  count?: number;
-  children?: MenuItemData[];
+  route?: string;
+  children?: MenuChild[];
 }
 
-const menuItemsData: MenuItemData[] = [
-  { key: '/dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
-  { key: '/agents', icon: <RobotOutlined />, label: 'Agents', count: 12 },
-  { key: '/knowledge', icon: <DatabaseOutlined />, label: 'Knowledge Base' },
-  { key: '/workflows', icon: <BranchesOutlined />, label: 'Workflows' },
-  { key: '/models', icon: <SettingOutlined />, label: 'Models' },
-  { key: '/tools', icon: <ToolOutlined />, label: 'Tools' },
-  { key: '/conversations', icon: <MessageOutlined />, label: 'Conversations', count: 5 },
-  { key: '/audit', icon: <AuditOutlined />, label: 'Audit Logs' },
-  { key: '/observability', icon: <EyeOutlined />, label: 'Observability' },
-  { key: '/agent-versions', icon: <BranchesOutlined />, label: 'Versions & A/B' },
-  { key: '/compliance', icon: <SafetyOutlined />, label: 'Compliance' },
-  { key: '/plugins', icon: <ApiOutlined />, label: 'Plugins' },
-  { key: '/import', icon: <ImportOutlined />, label: 'Data Import' },
-  { key: '/prompt-editor', icon: <CodeOutlined />, label: 'Prompt Editor' },
-  { key: '/publish', icon: <RocketOutlined />, label: 'Publish' },
-  { key: '/model-compare', icon: <ExperimentOutlined />, label: 'Model Compare' },
-  { key: '/variables', icon: <DatabaseOutlined />, label: 'Variables' },
-  { key: '/tokens', icon: <KeyOutlined />, label: 'API Keys' },
-];
-
-const categoryItemsData: MenuItemData[] = [
+const menuData: MenuGroup[] = [
+  { key: '/dashboard', icon: <DashboardOutlined />, label: 'Dashboard', route: '/dashboard' },
+  {
+    key: 'agents',
+    icon: <RobotOutlined />,
+    label: 'Agents',
+    children: [
+      { key: '/agents', label: 'Agents' },
+      { key: '/conversations', label: 'Conversations' },
+      { key: '/knowledge', label: 'Knowledge Base' },
+      { key: '/tools', label: 'Tools' },
+      { key: '/prompt-editor', label: 'Prompt Editor' },
+      { key: '/publish', label: 'Publish' },
+    ],
+  },
+  {
+    key: 'orchestration',
+    icon: <BranchesOutlined />,
+    label: 'Orchestration',
+    children: [
+      { key: '/workflows', label: 'Workflows' },
+      { key: '/multi-agent', label: 'Multi-Agent' },
+      { key: '/triggers', label: 'Triggers' },
+      { key: '/webhooks', label: 'Webhooks' },
+    ],
+  },
+  {
+    key: 'models',
+    icon: <SettingOutlined />,
+    label: 'Models',
+    children: [
+      { key: '/models', label: 'Models' },
+      { key: '/model-compare', label: 'Model Compare' },
+      { key: '/variables', label: 'Variables' },
+      { key: '/evaluations', label: 'Evaluations' },
+      { key: '/evaluations/playground', label: 'Playground' },
+    ],
+  },
   {
     key: 'marketplace',
     icon: <ShopOutlined />,
     label: 'Marketplace',
     children: [
-      { key: '/marketplace', icon: <ShopOutlined />, label: 'Browse' },
-      { key: '/marketplace/tools', icon: <ToolOutlined />, label: 'Tools' },
-      { key: '/marketplace/my-submissions', icon: <FileOutlined />, label: 'My Submissions' },
-      { key: '/marketplace/admin/reviews', icon: <CheckCircleOutlined />, label: 'Reviews' },
-      { key: '/marketplace/admin/assets', icon: <SafetyOutlined />, label: 'Asset Control' },
-      { key: '/marketplace/admin/dashboard', icon: <BarChartOutlined />, label: 'Operations' },
+      { key: '/marketplace', label: 'Browse' },
+      { key: '/marketplace/tools', label: 'Tools' },
+      { key: '/marketplace/my-submissions', label: 'My Submissions' },
+      { key: '/marketplace/admin/reviews', label: 'Reviews' },
+      { key: '/marketplace/admin/assets', label: 'Asset Control' },
+      { key: '/marketplace/admin/dashboard', label: 'Operations' },
     ],
   },
   {
-    key: 'multi-agent',
-    icon: <TeamOutlined />,
-    label: 'Multi-Agent',
+    key: 'observability',
+    icon: <EyeOutlined />,
+    label: 'Observability',
     children: [
-      { key: '/multi-agent', icon: <ApartmentOutlined />, label: 'Crews' },
+      { key: '/audit', label: 'Audit Logs' },
+      { key: '/observability', label: 'Observability' },
+      { key: '/compliance', label: 'Compliance' },
+      { key: '/agent-versions', label: 'Versions & A/B' },
     ],
   },
   {
-    key: 'quality',
-    icon: <ExperimentOutlined />,
-    label: 'Quality',
-    children: [
-      { key: '/evaluations', icon: <ExperimentOutlined />, label: 'Evaluations' },
-      { key: '/evaluations/playground', icon: <BarChartOutlined />, label: 'Playground' },
-    ],
-  },
-  {
-    key: 'automation',
-    icon: <ThunderboltOutlined />,
-    label: 'Automation',
-    children: [
-      { key: '/triggers', icon: <ThunderboltOutlined />, label: 'Triggers' },
-      { key: '/webhooks', icon: <ApiOutlined />, label: 'Webhooks' },
-    ],
-  },
-  {
-    key: 'admin',
+    key: 'system',
     icon: <SafetyOutlined />,
-    label: 'Admin',
+    label: 'System',
     children: [
-      { key: '/tenants', icon: <ApartmentOutlined />, label: 'Tenants' },
-      { key: '/roles', icon: <SafetyOutlined />, label: 'Roles' },
-      { key: '/users', icon: <UserOutlined />, label: 'Users' },
+      { key: '/tokens', label: 'API Keys' },
+      { key: '/plugins', label: 'Plugins' },
+      { key: '/import', label: 'Data Import' },
+      { key: '/tenants', label: 'Tenants' },
+      { key: '/roles', label: 'Roles' },
+      { key: '/users', label: 'Users' },
     ],
   },
 ];
@@ -104,7 +112,7 @@ function NavItem({
   onClick,
   depth = 0,
 }: {
-  item: MenuItemData;
+  item: MenuGroup;
   isActive: boolean;
   onClick: (key: string) => void;
   depth?: number;
@@ -112,56 +120,64 @@ function NavItem({
   const [expanded, setExpanded] = useState(false);
   const pathname = usePathname();
   const hasChildren = item.children && item.children.length > 0;
-  const active = isActive || (hasChildren && item.children?.some(c => c.key === pathname));
+  const active = isActive || (hasChildren && item.children?.some((c) => c.key === pathname));
+
+  const isChild = depth > 0;
 
   if (hasChildren) {
     return (
       <div style={{ marginBottom: 4 }}>
         <button
+          type="button"
+          aria-expanded={expanded}
           onClick={() => setExpanded(!expanded)}
           style={{
             width: '100%',
             display: 'flex',
             alignItems: 'center',
             gap: 10,
-            padding: '10px 14px',
+            padding: isChild ? '8px 14px 8px 24px' : '10px 14px',
             borderRadius: 'var(--ae-radius-md)',
             border: 'none',
-            background: expanded ? 'rgba(255,255,255,0.52)' : 'transparent',
+            background: expanded || active ? 'rgba(255,255,255,0.52)' : 'transparent',
             cursor: 'pointer',
             color: 'var(--ae-text)',
-            fontSize: 14,
+            fontSize: isChild ? 13 : 14,
             fontWeight: 500,
             transition: 'all 180ms ease',
             textAlign: 'left',
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.background = 'rgba(255,255,255,0.52)';
-            e.currentTarget.style.transform = 'translateX(2px)';
+            if (!isChild) e.currentTarget.style.transform = 'translateX(2px)';
           }}
           onMouseLeave={(e) => {
-            if (!expanded) {
+            if (!expanded && !active) {
               e.currentTarget.style.background = 'transparent';
             }
-            e.currentTarget.style.transform = 'translateX(0)';
+            if (!isChild) e.currentTarget.style.transform = 'translateX(0)';
           }}
         >
-          <span
-            style={{
-              width: 22,
-              height: 22,
-              borderRadius: 8,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'rgba(122, 138, 106, 0.12)',
-              color: 'var(--ae-accent-olive)',
-              fontSize: 12,
-              flexShrink: 0,
-            }}
-          >
-            {item.icon}
-          </span>
+          {!isChild && (
+            <span
+              style={{
+                width: 22,
+                height: 22,
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: active
+                  ? 'rgba(122, 138, 106, 0.18)'
+                  : 'rgba(122, 138, 106, 0.12)',
+                color: active ? 'var(--ae-accent-olive)' : 'var(--ae-accent-olive)',
+                fontSize: 12,
+                flexShrink: 0,
+              }}
+            >
+              {item.icon}
+            </span>
+          )}
           <span style={{ flex: 1 }}>{item.label}</span>
           <span
             style={{
@@ -175,11 +191,11 @@ function NavItem({
           </span>
         </button>
         {expanded && (
-          <div style={{ paddingLeft: 8, marginTop: 4 }}>
+          <div style={{ paddingLeft: 0, marginTop: 2 }}>
             {item.children?.map((child) => (
               <NavItem
                 key={child.key}
-                item={child}
+                item={{ key: child.key, icon: null, label: child.label, route: child.key }}
                 isActive={pathname === child.key}
                 onClick={onClick}
                 depth={depth + 1}
@@ -193,45 +209,51 @@ function NavItem({
 
   return (
     <button
+      type="button"
+      aria-current={isActive ? 'page' : undefined}
       onClick={() => onClick(item.key)}
       style={{
         width: '100%',
         display: 'flex',
         alignItems: 'center',
         gap: 10,
-        padding: '10px 14px',
+        padding: isChild ? '8px 14px 8px 24px' : '10px 14px',
         borderRadius: 'var(--ae-radius-md)',
         border: 'none',
         background: isActive
           ? 'rgba(255,255,255,0.72)'
-          : 'rgba(255,255,255,0.52)',
+          : isChild
+            ? 'transparent'
+            : 'rgba(255,255,255,0.52)',
         cursor: 'pointer',
         color: 'var(--ae-text)',
-        fontSize: 14,
+        fontSize: isChild ? 13 : 14,
         fontWeight: isActive ? 600 : 500,
         transition: 'all 180ms ease',
         textAlign: 'left',
         position: 'relative',
-        boxShadow: isActive
+        boxShadow: isActive && !isChild
           ? '0 2px 8px rgba(74, 60, 48, 0.08)'
           : 'none',
-        marginBottom: 4,
-        paddingLeft: isActive ? '11px' : '14px',
+        marginBottom: 2,
+        paddingLeft: isActive && !isChild ? '11px' : isChild ? '24px' : '14px',
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.background = 'rgba(255,255,255,0.72)';
-        e.currentTarget.style.transform = 'translateX(2px)';
-        e.currentTarget.style.boxShadow = '0 2px 8px rgba(74, 60, 48, 0.08)';
+        if (!isChild) {
+          e.currentTarget.style.transform = 'translateX(2px)';
+          e.currentTarget.style.boxShadow = '0 2px 8px rgba(74, 60, 48, 0.08)';
+        }
       }}
       onMouseLeave={(e) => {
         if (!isActive) {
-          e.currentTarget.style.background = 'rgba(255,255,255,0.52)';
+          e.currentTarget.style.background = isChild ? 'transparent' : 'rgba(255,255,255,0.52)';
           e.currentTarget.style.boxShadow = 'none';
         }
-        e.currentTarget.style.transform = 'translateX(0)';
+        if (!isChild) e.currentTarget.style.transform = 'translateX(0)';
       }}
     >
-      {isActive && (
+      {isActive && !isChild && (
         <div
           style={{
             position: 'absolute',
@@ -245,42 +267,28 @@ function NavItem({
           }}
         />
       )}
-      <span
-        style={{
-          width: 22,
-          height: 22,
-          borderRadius: 8,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: isActive
-            ? 'rgba(122, 138, 106, 0.18)'
-            : 'rgba(122, 138, 106, 0.12)',
-          color: isActive ? 'var(--ae-accent-olive)' : 'var(--ae-muted)',
-          fontSize: 12,
-          flexShrink: 0,
-          transition: 'all 180ms ease',
-        }}
-      >
-        {item.icon}
-      </span>
-      <span style={{ flex: 1 }}>{item.label}</span>
-      {item.count !== undefined && item.count > 0 && (
+      {!isChild && item.icon && (
         <span
           style={{
-            fontSize: 11,
-            fontWeight: 600,
-            color: 'var(--ae-muted)',
-            background: 'rgba(255,255,255,0.6)',
-            padding: '2px 8px',
-            borderRadius: 'var(--ae-radius-full)',
-            minWidth: 22,
-            textAlign: 'center',
+            width: 22,
+            height: 22,
+            borderRadius: 8,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: isActive
+              ? 'rgba(122, 138, 106, 0.18)'
+              : 'rgba(122, 138, 106, 0.12)',
+            color: isActive ? 'var(--ae-accent-olive)' : 'var(--ae-muted)',
+            fontSize: 12,
+            flexShrink: 0,
+            transition: 'all 180ms ease',
           }}
         >
-          {item.count}
+          {item.icon}
         </span>
       )}
+      <span style={{ flex: 1 }}>{item.label}</span>
     </button>
   );
 }
@@ -377,7 +385,8 @@ function SidebarContent({ onItemClick }: { onItemClick: (key: string) => void })
       </div>
 
       {/* Navigation */}
-      <div
+      <nav
+        aria-label="Main navigation"
         style={{
           flex: 1,
           overflowY: 'auto',
@@ -387,39 +396,15 @@ function SidebarContent({ onItemClick }: { onItemClick: (key: string) => void })
           padding: '4px 0',
         }}
       >
-        {/* Main nav items */}
-        <div style={{ marginBottom: 12 }}>
-          {menuItemsData.map((item) => (
-            <NavItem
-              key={item.key}
-              item={item}
-              isActive={pathname === item.key}
-              onClick={onItemClick}
-            />
-          ))}
-        </div>
-
-        {/* Divider */}
-        <div
-          style={{
-            height: 1,
-            background: 'var(--ae-line)',
-            margin: '12px 4px',
-          }}
-        />
-
-        {/* Category items */}
-        <div>
-          {categoryItemsData.map((item) => (
-            <NavItem
-              key={item.key}
-              item={item}
-              isActive={pathname === item.key}
-              onClick={onItemClick}
-            />
-          ))}
-        </div>
-      </div>
+        {menuData.map((item) => (
+          <NavItem
+            key={item.key}
+            item={item}
+            isActive={pathname === item.key}
+            onClick={onItemClick}
+          />
+        ))}
+      </nav>
 
       {/* Cards Section */}
       <div
@@ -519,9 +504,14 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   const router = useRouter();
 
   const handleItemClick = (key: string) => {
-    const nonNavigable = ['multi-agent', 'quality', 'automation', 'admin', 'marketplace'];
-    if (!nonNavigable.includes(key)) {
-      router.push(key);
+    const group = menuData.find((m) => m.key === key);
+    if (group?.route) {
+      router.push(group.route);
+      onMobileClose?.();
+    }
+    const childRoute = menuData.flatMap((m) => m.children || []).find((c) => c.key === key);
+    if (childRoute) {
+      router.push(childRoute.key);
       onMobileClose?.();
     }
   };

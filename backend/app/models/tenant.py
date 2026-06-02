@@ -14,7 +14,7 @@ class TenantModel(Base, EnterpriseMixin):
     name = Column(String(100), nullable=False)
     code = Column(String(50), unique=True, nullable=False)
     status = Column(String(20), default="active")
-    parent_id = Column(String(36), nullable=True, index=True)
+    parent_id = Column(String(36), ForeignKey("tenants.id"), nullable=True, index=True)
     org_level = Column(String(20), default="company")
     org_path = Column(String(500), default="")
     max_agents = Column(Integer, default=10)

@@ -93,6 +93,7 @@ class ModelService:
         return [
             {
                 "id": c.id,
+                "provider_id": c.provider_id,
                 "model_name": c.model_name,
                 "model_type": c.model_type,
                 "display_name": c.display_name,

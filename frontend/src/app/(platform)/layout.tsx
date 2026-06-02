@@ -10,6 +10,7 @@ import Header from '@/components/Header';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import CommandPalette from '@/components/CommandPalette';
 import { OnboardingProvider, type OnboardingStep } from '@/components/onboarding';
+import BreadcrumbNav from '@/components/BreadcrumbNav';
 import { useAuthStore } from '@/store/auth';
 import { useRouter } from 'next/navigation';
 
@@ -94,6 +95,12 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
 
   return (
     <OnboardingProvider steps={onboardingSteps}>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[1001] focus:px-4 focus:py-2 focus:rounded-md focus:bg-[var(--ae-accent-olive)] focus:text-white focus:font-medium"
+      >
+        Skip to main content
+      </a>
       <Layout style={{ minHeight: '100vh', background: 'transparent' }}>
         <Sidebar
           mobileOpen={mobileSidebarOpen}
@@ -101,7 +108,6 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
         />
         <Layout
           style={{
-            marginLeft: 0,
             background: 'transparent',
           }}
           className="md:ml-[280px]"
@@ -118,6 +124,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
             }}
           >
             <div
+              id="main-content"
               style={{
                 background: 'var(--ae-panel)',
                 backdropFilter: 'blur(16px)',
@@ -130,6 +137,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
               }}
               className="animate-float-in"
             >
+              <BreadcrumbNav />
               <ErrorBoundary>
                 {children}
               </ErrorBoundary>
