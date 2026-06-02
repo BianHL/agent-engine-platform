@@ -328,12 +328,23 @@ async def chat_with_file(
         db.add(conv)
         await db.flush()
         conversation_id = conv.id
+    else:
+        # Verify conversation belongs to current tenant
+        from sqlalchemy import select as sa_select
+        existing = (await db.execute(
+            sa_select(ConversationModel).where(
+                ConversationModel.id == conversation_id,
+                ConversationModel.tenant_id == user["tenant_id"],
+            ))).scalar_one_or_none()
+        if not existing:
+            raise HTTPException(status_code=404, detail="Conversation not found")
 
     db.add(MessageModel(
         conversation_id=conversation_id,
+        tenant_id=user["tenant_id"],
         role="user",
         content=full_message,
-        metadata={"file": {"id": file_id, "filename": filename, "size": len(content)}}))
+        meta_info={"file": {"id": file_id, "filename": filename, "size": len(content)}}))
     db.add(MessageModel(conversation_id=conversation_id, role="assistant", content=content_text))
     await db.flush()
 

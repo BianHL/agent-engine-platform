@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import get_current_user
+from app.core.auth import get_current_user, require_permission
 from app.core.database import get_db
 from app.models.system import ModelProviderModel
 from app.platform.model_service.model_service import ModelService
@@ -95,7 +95,7 @@ async def discover_models(
 async def create_provider(
     body: CreateProviderRequest,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("model", "create"))):
     svc = ModelService(db)
     return await svc.create_provider(tenant_id=user["tenant_id"], data=body.model_dump())
 
@@ -124,7 +124,7 @@ async def get_provider(
 async def delete_provider(
     provider_id: str,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("model", "delete"))):
     svc = ModelService(db)
     await svc.delete_provider(provider_id, tenant_id=user["tenant_id"])
     return {"status": "deleted"}
@@ -134,7 +134,7 @@ async def delete_provider(
 async def create_model_config(
     body: CreateModelConfigRequest,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("model", "create"))):
     svc = ModelService(db)
     data = body.model_dump()
     if data.get("display_name") is None:
@@ -154,7 +154,7 @@ async def list_model_configs(
 async def set_default_model(
     config_id: str,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("model", "update"))):
     svc = ModelService(db)
     await svc.set_default(config_id, tenant_id=user["tenant_id"])
     return {"status": "ok"}
@@ -164,7 +164,7 @@ async def set_default_model(
 async def delete_model_config(
     config_id: str,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("model", "delete"))):
     svc = ModelService(db)
     await svc.delete_model_config(config_id, tenant_id=user["tenant_id"])
     return {"status": "deleted"}
