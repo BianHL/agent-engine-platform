@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user
+from app.core.rbac import require_permission
 from app.core.database import get_db
 from app.engines.multi_agent.crew import AgentRole, Crew, Task
 from app.engines.multi_agent.handoff import HandoffManager
@@ -23,7 +24,7 @@ _crew_configs: dict[str, dict] = {}
 async def create_and_run_crew(
     body: CreateCrewRequest,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("multi_agent", "create")),
 ):
     """Create and run a crew."""
     agents = [
@@ -88,7 +89,7 @@ async def create_and_run_crew(
 async def execute_handoff(
     body: HandoffRequest,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("multi_agent", "create")),
 ):
     """Execute handoff between agents."""
     manager = HandoffManager(
@@ -125,7 +126,7 @@ async def list_crews(
 async def dry_run_crew(
     body: CreateCrewRequest,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("multi_agent", "create")),
 ):
     """Test crew execution without side effects (no LLM calls)."""
     agents = [

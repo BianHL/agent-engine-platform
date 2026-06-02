@@ -11,6 +11,7 @@ from sqlalchemy import select, func, and_, desc, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user, get_tenant_id
+from app.core.rbac import require_permission
 from app.core.database import get_db
 from app.models.extended import PluginModel, PluginInstallModel, PluginRatingModel
 
@@ -215,7 +216,7 @@ async def get_plugin(
 async def create_plugin(
     data: PluginCreate,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("plugin", "create")),
     tenant_id: str = Depends(get_tenant_id),
 ):
     """Create a new plugin (for plugin developers)."""
@@ -279,7 +280,7 @@ async def update_plugin(
     plugin_id: str,
     data: PluginUpdate,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("plugin", "update")),
     tenant_id: str = Depends(get_tenant_id),
 ):
     """Update a plugin."""
@@ -327,7 +328,7 @@ async def update_plugin(
 async def delete_plugin(
     plugin_id: str,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("plugin", "delete")),
 ):
     """Delete a plugin."""
     stmt = select(PluginModel).where(
@@ -351,7 +352,7 @@ async def install_plugin(
     plugin_id: str,
     config: Optional[dict] = None,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("plugin", "create")),
     tenant_id: str = Depends(get_tenant_id),
 ):
     """Install a plugin for the current tenant."""
@@ -403,7 +404,7 @@ async def install_plugin(
 async def uninstall_plugin(
     plugin_id: str,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("plugin", "delete")),
     tenant_id: str = Depends(get_tenant_id),
 ):
     """Uninstall a plugin."""
@@ -456,7 +457,7 @@ async def rate_plugin(
     plugin_id: str,
     data: PluginRatingCreate,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("plugin", "create")),
 ):
     """Rate a plugin."""
     # Check if plugin exists

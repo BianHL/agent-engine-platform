@@ -5,6 +5,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
+from app.core.rbac import require_permission
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user
@@ -27,7 +28,7 @@ router = APIRouter(prefix="/feedbacks", tags=["feedbacks"])
 async def create_feedback(
     body: CreateFeedbackRequest,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("feedback", "create")),
 ):
     """Create feedback for a message (positive/negative rating + comment)."""
     message_id = body.message_id
@@ -70,7 +71,7 @@ async def update_feedback(
     feedback_id: str,
     body: UpdateFeedbackRequest,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("feedback", "update")),
 ):
     """Update an existing feedback."""
     stmt = select(MessageFeedbackModel).where(
@@ -124,7 +125,7 @@ async def get_feedback_stats(
 async def create_annotation(
     body: CreateAnnotationRequest,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("annotation", "create")),
 ):
     """Create an annotation (corrected answer) for a message."""
     message_id = body.message_id
