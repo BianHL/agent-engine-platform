@@ -28,6 +28,8 @@ from app.api.v1 import (
     users,
     variables,
     webhooks,
+    agent_versions,
+    workflow_debug,
     workflows)
 
 api_router = APIRouter(prefix="/api/v1")
@@ -39,6 +41,8 @@ api_router.include_router(chat.router)
 api_router.include_router(usage.router)
 api_router.include_router(conversations.router)
 api_router.include_router(workflows.router)
+api_router.include_router(agent_versions.router)
+api_router.include_router(workflow_debug.router)
 api_router.include_router(tasks.router)
 api_router.include_router(tenants.router)
 api_router.include_router(memory.router)
