@@ -20,7 +20,8 @@ from app.models.conversation import (
     MessageFeedbackModel,
     MessageModel,
 )
-from app.models.knowledge import ChunkModel, DocumentModel, DocumentSegmentModel, KnowledgeBaseModel
+from app.models.knowledge import DocumentModel, DocumentSegmentModel, KnowledgeBaseModel
+from app.models.extended import ABTestModel, ComplianceReportModel, PluginInstallModel, PluginModel, PluginRatingModel
 from app.models.marketplace import MarketplaceChangeLogModel, MarketplaceCloneModel, MarketplaceItem, MarketplaceRatingModel, MarketplaceReviewModel
 from app.models.multi_agent import CrewExecutionModel, CrewModel, HandoffModel, TaskModel
 from app.models.system import (
@@ -74,7 +75,6 @@ base_module.CrewExecutionModel = CrewExecutionModel
 base_module.CrewModel = CrewModel
 base_module.ConversationModel = ConversationModel
 base_module.ConversationVariableModel = ConversationVariableModel
-base_module.ChunkModel = ChunkModel
 base_module.DepartmentModel = DepartmentModel
 base_module.DocumentModel = DocumentModel
 base_module.DocumentSegmentModel = DocumentSegmentModel
@@ -84,6 +84,11 @@ base_module.EvaluationRunModel = EvaluationRunModel
 base_module.FeedbackModel = FeedbackModel
 base_module.FileAssetModel = FileAssetModel
 base_module.HandoffModel = HandoffModel
+base_module.ABTestModel = ABTestModel
+base_module.ComplianceReportModel = ComplianceReportModel
+base_module.PluginModel = PluginModel
+base_module.PluginInstallModel = PluginInstallModel
+base_module.PluginRatingModel = PluginRatingModel
 base_module.KnowledgeBaseModel = KnowledgeBaseModel
 base_module.MarketplaceItem = MarketplaceItem
 base_module.MarketplaceReviewModel = MarketplaceReviewModel
@@ -134,7 +139,6 @@ sys.modules[__name__].CrewExecutionModel = CrewExecutionModel
 sys.modules[__name__].CrewModel = CrewModel
 sys.modules[__name__].ConversationModel = ConversationModel
 sys.modules[__name__].ConversationVariableModel = ConversationVariableModel
-sys.modules[__name__].ChunkModel = ChunkModel
 sys.modules[__name__].DepartmentModel = DepartmentModel
 sys.modules[__name__].DocumentModel = DocumentModel
 sys.modules[__name__].DocumentSegmentModel = DocumentSegmentModel
@@ -144,6 +148,11 @@ sys.modules[__name__].EvaluationRunModel = EvaluationRunModel
 sys.modules[__name__].FeedbackModel = FeedbackModel
 sys.modules[__name__].FileAssetModel = FileAssetModel
 sys.modules[__name__].HandoffModel = HandoffModel
+sys.modules[__name__].ABTestModel = ABTestModel
+sys.modules[__name__].ComplianceReportModel = ComplianceReportModel
+sys.modules[__name__].PluginModel = PluginModel
+sys.modules[__name__].PluginInstallModel = PluginInstallModel
+sys.modules[__name__].PluginRatingModel = PluginRatingModel
 sys.modules[__name__].KnowledgeBaseModel = KnowledgeBaseModel
 sys.modules[__name__].MarketplaceItem = MarketplaceItem
 sys.modules[__name__].MarketplaceReviewModel = MarketplaceReviewModel
@@ -207,7 +216,6 @@ __all__ = [
     "KnowledgeBaseModel",
     "DocumentModel",
     "DocumentSegmentModel",
-    "ChunkModel",
     # Workflow
     "WorkflowModel",
     "WorkflowNodeModel",
@@ -255,6 +263,11 @@ __all__ = [
     "FeedbackModel",
     "TraceSpanModel",
     # Marketplace
+    "ABTestModel",
+    "PluginModel",
+    "PluginInstallModel",
+    "PluginRatingModel",
+    "ComplianceReportModel",
     "MarketplaceItem",
     "MarketplaceReviewModel",
     "MarketplaceRatingModel",

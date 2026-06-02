@@ -95,9 +95,4 @@ class DocumentSegmentModel(Base):
 
     # relationships
     document = relationship("DocumentModel", back_populates="segments")
-    parent = relationship("DocumentSegmentModel", remote_side="DocumentSegmentModel.id", backref="children")
-
-
-class ChunkModel(Base):
-    """Alias for DocumentSegmentModel for backward compatibility."""
-    __tablename__ = "document_segments"
+    parent = relationship("DocumentSegmentModel", remote_side=[id], backref="children")

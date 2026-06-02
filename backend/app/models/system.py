@@ -1,7 +1,7 @@
 """System configuration models (RBAC, Webhooks, Triggers, Model Providers, Usage, etc)."""
 from datetime import UTC, datetime
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, Float, ForeignKey, Index, Integer, JSON, String, Text, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, Float, ForeignKey, Index, Integer, JSON, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base, EnterpriseMixin, OptimisticLockMixin, generate_uuid
@@ -173,7 +173,7 @@ class ModelProviderModel(Base, EnterpriseMixin, OptimisticLockMixin):
     health_error_message = Column(Text, nullable=True)
     total_requests = Column(Integer, default=0)
     total_tokens = Column(Integer, default=0)
-    total_cost = Column(Float, default=0.0)
+    total_cost = Column(Numeric(12, 4), default=0.0)
     version = Column(Integer, default=1)
 
     # relationships
@@ -198,8 +198,8 @@ class ModelConfigModel(Base, OptimisticLockMixin):
     supports_streaming = Column(Boolean, default=True)
     supports_function_calling = Column(Boolean, default=False)
     supports_vision = Column(Boolean, default=False)
-    input_price_per_1k = Column(Float, nullable=True)
-    output_price_per_1k = Column(Float, nullable=True)
+    input_price_per_1k = Column(Numeric(10, 6), nullable=True)
+    output_price_per_1k = Column(Numeric(10, 6), nullable=True)
     deleted_at = Column(DateTime, nullable=True, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None), onupdate=lambda: datetime.now(UTC).replace(tzinfo=None))
@@ -226,7 +226,7 @@ class UsageLogModel(Base):
     input_tokens = Column(Integer, default=0)
     output_tokens = Column(Integer, default=0)
     cached_tokens = Column(Integer, default=0)
-    cost = Column(Float, default=0.0)
+    cost = Column(Numeric(10, 6), default=0.0)
     request_type = Column(String(20))
     status = Column(String(20), default="success")
     latency_ms = Column(Integer, nullable=True)
@@ -251,7 +251,7 @@ class ModelUsageDailyModel(Base):
     total_input_tokens = Column(Integer, default=0)
     total_output_tokens = Column(Integer, default=0)
     total_cached_tokens = Column(Integer, default=0)
-    total_cost = Column(Float, default=0.0)
+    total_cost = Column(Numeric(10, 6), default=0.0)
     avg_latency_ms = Column(Integer, nullable=True)
     p99_latency_ms = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
@@ -272,11 +272,11 @@ class TenantUsageMonthlyModel(Base):
     total_requests = Column(Integer, default=0)
     total_input_tokens = Column(BigInteger, default=0)
     total_output_tokens = Column(BigInteger, default=0)
-    total_cost = Column(Float, default=0.0)
+    total_cost = Column(Numeric(10, 6), default=0.0)
     cost_by_model = Column(JSON, nullable=True)
     cost_by_user = Column(JSON, nullable=True)
-    storage_used_gb = Column(Float, default=0.0)
-    bandwidth_used_gb = Column(Float, default=0.0)
+    storage_used_gb = Column(Numeric(10, 2), default=0.0)
+    bandwidth_used_gb = Column(Numeric(10, 2), default=0.0)
     status = Column(String(20), default="draft")
     confirmed_at = Column(DateTime, nullable=True)
     invoiced_at = Column(DateTime, nullable=True)
@@ -382,7 +382,7 @@ class EvaluationRunModel(Base):
     summary = Column(JSON, default=dict)
     avg_scores = Column(JSON, nullable=True)
     total_tokens = Column(Integer, default=0)
-    total_cost = Column(Float, default=0.0)
+    total_cost = Column(Numeric(10, 6), default=0.0)
     created_by = Column(String(36), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
 
@@ -658,5 +658,5 @@ class TraceSpanModel(Base):
     output = Column(JSON, nullable=True)
     attributes = Column(JSON, nullable=True)
     tokens = Column(Integer, nullable=True)
-    cost = Column(Float, nullable=True)
+    cost = Column(Numeric(10, 6), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None), index=True)

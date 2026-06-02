@@ -1,7 +1,7 @@
 """Conversation and Message models."""
 from datetime import UTC, datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, JSON, Numeric, String, Text
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base, generate_uuid
@@ -24,7 +24,7 @@ class ConversationModel(Base):
     message_count = Column(Integer, default=0)
     total_input_tokens = Column(Integer, default=0)
     total_output_tokens = Column(Integer, default=0)
-    total_cost = Column(Float, default=0.0)
+    total_cost = Column(Numeric(10, 6), default=0.0)
     last_message_at = Column(DateTime, nullable=True, index=True)
     last_message_preview = Column(String(200), nullable=True)
     archived_at = Column(DateTime, nullable=True)
