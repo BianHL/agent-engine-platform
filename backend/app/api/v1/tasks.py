@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user
+from app.core.rbac import require_permission
 from app.core.database import get_db
 from app.platform.task_service.task_service import TaskQueueService
 from app.schemas.api import StatusResponse, TaskStatusResponse
@@ -27,7 +28,7 @@ async def get_task_status(
 @router.post("/cancel/{task_id}")
 async def cancel_task(
     task_id: str,
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("task", "update"))):
     """Cancel a running task."""
     result = await _task_service.cancel_task(task_id)
     return result
@@ -46,7 +47,7 @@ async def list_dead_letters(
 @router.post("/dead-letters/{index}/retry")
 async def retry_dead_letter(
     index: int,
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("task", "update"))):
     """Retry a dead letter task by index."""
     try:
         return await _task_service.retry_dead_letter(index)

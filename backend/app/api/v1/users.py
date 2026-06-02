@@ -4,6 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user, require_role
+from app.core.rbac import require_permission
 from app.core.database import get_db
 from app.core.security import get_password_hash
 from app.models.base import UserModel

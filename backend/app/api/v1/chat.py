@@ -12,6 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user
+from app.core.rbac import require_permission
 from app.core.database import async_session, get_db
 from app.engines.safety_engine.safety import SafetyAction, SafetyEngine, SafetyPolicy
 from app.models.base import AgentModel, ConversationModel, MessageModel
@@ -80,7 +81,7 @@ async def chat_completions(
     request: Request,
     body: ChatRequest,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("chat", "create"))):
     """Non-streaming chat completion."""
     agent = await _get_agent(db, body.agent_id, user["tenant_id"])
 
@@ -178,7 +179,7 @@ async def chat_stream(
     request: Request,
     body: ChatRequest,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("chat", "create"))):
     """SSE streaming chat."""
     agent = await _get_agent(db, body.agent_id, user["tenant_id"])
 
@@ -274,7 +275,7 @@ async def chat_with_file(
     file: UploadFile = File(...),
     conversation_id: Optional[str] = Form(None),
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("chat", "create"))):
     """Chat with file attachment (image/document)."""
     agent = await _get_agent(db, agent_id, user["tenant_id"])
 
