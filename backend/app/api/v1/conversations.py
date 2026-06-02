@@ -28,6 +28,7 @@ async def list_conversations(
     return await svc.list_conversations(
         tenant_id=user["tenant_id"],
         user_id=user["id"],
+        agent_id=agent_id,
         page=page,
         size=size)
 
@@ -101,5 +102,6 @@ async def add_message(
         conversation_id=conversation_id,
         role=body.role,
         content=body.content,
+        tenant_id=user["tenant_id"],
         metadata=body.metadata)
     return result

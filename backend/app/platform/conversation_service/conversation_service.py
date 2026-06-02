@@ -49,11 +49,13 @@ class ConversationService:
         }
 
     async def list_conversations(
-        self, tenant_id: str, user_id: Optional[str] = None, page: int = 1, size: int = 20
+        self, tenant_id: str, user_id: Optional[str] = None, agent_id: Optional[str] = None, page: int = 1, size: int = 20
     ) -> dict:
         filters = [ConversationModel.tenant_id == tenant_id]
         if user_id:
             filters.append(ConversationModel.user_id == user_id)
+        if agent_id:
+            filters.append(ConversationModel.agent_id == agent_id)
 
         count_result = await self.db.execute(
             select(func.count()).where(*filters)
@@ -90,7 +92,10 @@ class ConversationService:
     async def get_messages(self, conversation_id: str, tenant_id: str) -> list:
         stmt = (
             select(MessageModel)
-            .where(MessageModel.conversation_id == conversation_id)
+            .where(
+                MessageModel.conversation_id == conversation_id,
+                MessageModel.tenant_id == tenant_id,
+            )
             .order_by(MessageModel.created_at)
         )
         result = await self.db.execute(stmt)
@@ -110,13 +115,15 @@ class ConversationService:
         conversation_id: str,
         role: str,
         content: str,
+        tenant_id: str = None,
         metadata: dict = None,
     ) -> dict:
         msg = MessageModel(
             conversation_id=conversation_id,
+            tenant_id=tenant_id,
             role=role,
             content=content,
-            metadata=metadata or {},
+            meta_info=metadata or {},
         )
         self.db.add(msg)
         await self.db.flush()

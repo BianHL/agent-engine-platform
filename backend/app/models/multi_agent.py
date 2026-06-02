@@ -85,3 +85,6 @@ class HandoffModel(Base, EnterpriseMixin):
     status = Column(String(20), default="active")
     total_handoffs = Column(Integer, default=0)
     last_handoff_at = Column(DateTime, nullable=True)
+
+    # relationships
+    source_agent = relationship("AgentModel", foreign_keys=[source_agent_id])

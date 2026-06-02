@@ -148,6 +148,15 @@ async def chat_completions(
         await db.flush()
         conv_id = conv.id
     else:
+        # Verify conversation belongs to current tenant
+        from sqlalchemy import select as sa_select
+        existing = (await db.execute(
+            sa_select(ConversationModel).where(
+                ConversationModel.id == body.conversation_id,
+                ConversationModel.tenant_id == user["tenant_id"],
+            ))).scalar_one_or_none()
+        if not existing:
+            raise HTTPException(status_code=404, detail="Conversation not found")
         conv_id = body.conversation_id
 
     # Save messages
@@ -201,8 +210,16 @@ async def chat_stream(
         await db.flush()
         conv_id = conv.id
     else:
+        # Verify conversation belongs to current tenant
+        from sqlalchemy import select as sa_select
+        existing = (await db.execute(
+            sa_select(ConversationModel).where(
+                ConversationModel.id == body.conversation_id,
+                ConversationModel.tenant_id == user["tenant_id"],
+            ))).scalar_one_or_none()
+        if not existing:
+            raise HTTPException(status_code=404, detail="Conversation not found")
         conv_id = body.conversation_id
-
     db.add(MessageModel(conversation_id=conv_id, tenant_id=user["tenant_id"], role="user", content=last_msg))
     await db.flush()
 

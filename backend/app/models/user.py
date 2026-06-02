@@ -20,7 +20,7 @@ class UserModel(Base, EnterpriseMixin):
     nickname = Column(String(100), nullable=True)
     avatar_url = Column(String(500), nullable=True)
     role = Column(String(20), default="user")
-    department_id = Column(String(36), index=True)
+    department_id = Column(String(36), ForeignKey("departments.id"), index=True)
     position = Column(String(100), nullable=True)
     status = Column(String(20), default="active")
     last_login_at = Column(DateTime, nullable=True)
@@ -90,7 +90,7 @@ class UserSessionModel(Base):
     __tablename__ = "user_sessions"
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    user_id = Column(String(36), index=True, nullable=False)
+    user_id = Column(String(36), ForeignKey("users.id"), index=True, nullable=False)
     tenant_id = Column(String(36), nullable=False)
     session_token = Column(String(500), nullable=False)
     refresh_token = Column(String(500), nullable=True)
