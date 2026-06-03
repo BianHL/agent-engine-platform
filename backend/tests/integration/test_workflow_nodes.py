@@ -315,6 +315,11 @@ async def test_w010_sub_workflow_node():
     """Sub-workflow node returns sub_workflow_completed status."""
     engine = WorkflowEngine()
 
+    async def mock_loader(workflow_id):
+        return {"nodes": [{"id": "child_step", "type": "condition", "config": {"expression": "True"}}]}
+
+    engine.set_sub_workflow_loader(mock_loader)
+
     dag = _build_dag(
         WorkflowNode(id="sub1", type=NodeType.SUB_WORKFLOW, config={"workflow_id": "child_wf"})
     )
@@ -322,7 +327,6 @@ async def test_w010_sub_workflow_node():
     result = await engine.execute(dag)
     assert result["status"] == "success"
 
-    # Check execution log for the sub_workflow node
     log_entry = [e for e in result["execution_log"] if e["node_id"] == "sub1"][0]
     assert log_entry["status"] == "success"
 
@@ -331,6 +335,11 @@ async def test_w010_sub_workflow_node():
 async def test_w010_sub_workflow_in_chain():
     """Sub-workflow node works correctly when chained with other nodes."""
     engine = WorkflowEngine()
+
+    async def mock_loader(workflow_id):
+        return {"nodes": [{"id": "child_step", "type": "condition", "config": {"expression": "True"}}]}
+
+    engine.set_sub_workflow_loader(mock_loader)
 
     dag = _build_dag(
         WorkflowNode(id="start", type=NodeType.CONDITION, config={"expression": "True"}),

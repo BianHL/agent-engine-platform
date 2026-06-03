@@ -119,12 +119,12 @@ async def test_is_token_revoked_false():
 
 @pytest.mark.asyncio
 async def test_is_token_revoked_redis_failure():
-    """Test that token check fails open when Redis is unavailable."""
+    """Test that token check fails closed when Redis is unavailable."""
     with patch("app.core.auth.get_redis", side_effect=Exception("Redis down")):
         result = await is_token_revoked("test-jti")
 
-        # Should return False (allow token) on Redis failure
-        assert result is False
+        # Fail closed: return True (reject token) when security infra is down
+        assert result is True
 
 
 @pytest.mark.asyncio

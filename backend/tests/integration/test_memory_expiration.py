@@ -256,7 +256,8 @@ async def test_clear_session_deletes_short_term_key():
 
     await engine.clear_session("sess_cleanup")
 
-    redis.delete.assert_called_once_with("memory:short:sess_cleanup")
+    # clear_session deletes 3 keys: short-term, working, and summary
+    assert redis.delete.call_count == 3
 
 
 @pytest.mark.asyncio
@@ -268,7 +269,8 @@ async def test_clear_session_idempotent():
     await engine.clear_session("sess_cleanup")
     await engine.clear_session("sess_cleanup")
 
-    assert redis.delete.call_count == 2
+    # Each call deletes 3 keys, so 2 calls = 6
+    assert redis.delete.call_count == 6
 
 
 @pytest.mark.asyncio
