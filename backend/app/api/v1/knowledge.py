@@ -331,5 +331,10 @@ async def delete_knowledge_base(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_permission("knowledge", "delete"))):
     svc = KnowledgeBaseService(db)
-    await svc.delete(kb_id, tenant_id=user["tenant_id"])
+    try:
+        await svc.delete(kb_id, tenant_id=user["tenant_id"])
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete knowledge base: {str(e)}")
     return {"status": "deleted"}

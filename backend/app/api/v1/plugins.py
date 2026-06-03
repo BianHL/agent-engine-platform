@@ -109,7 +109,7 @@ class PluginRatingResponse(BaseModel):
 async def list_plugins(
     category: Optional[str] = None,
     search: Optional[str] = None,
-    sort_by: str = Query(default="popular", regex="^(popular|rating|newest|name)$"),
+    sort_by: str = Query(default="popular", pattern="^(popular|rating|newest|name)$"),
     page: int = Query(default=1, ge=1),
     size: int = Query(default=20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),

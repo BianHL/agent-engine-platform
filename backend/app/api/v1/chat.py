@@ -20,9 +20,14 @@ from app.schemas.api import ChatCompletionResponse
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+
 class ChatRequest(BaseModel):
     agent_id: str
-    messages: list[dict]
+    messages: list[ChatMessage]
     conversation_id: str | None = None
     stream: bool = False
 
@@ -35,8 +40,8 @@ async def _get_agent(db: AsyncSession, agent_id: str, tenant_id: str) -> AgentMo
     agent = result.scalar_one_or_none()
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
-    if agent.status not in ("published", "draft"):
-        raise HTTPException(status_code=400, detail="Agent is not available for chat")
+    if agent.status != "published":
+        raise HTTPException(status_code=400, detail="Agent is not published")
     return agent
 
 
@@ -86,7 +91,7 @@ async def chat_completions(
 
     # Safety check on last user message
     safety = SafetyEngine(SafetyPolicy(**(agent.safety_config or {})))
-    last_msg = body.messages[-1]["content"] if body.messages else ""
+    last_msg = body.messages[-1].content if body.messages else ""
     safety_result = await safety.check_input(last_msg)
     if not safety_result.safe:
         raise HTTPException(status_code=400, detail="Content blocked by safety filter")
@@ -94,7 +99,7 @@ async def chat_completions(
     # Build messages with system prompt
     system_prompt = _build_system_prompt(agent)
     llm_messages = [{"role": "system", "content": system_prompt}]
-    llm_messages.extend(body.messages)
+    llm_messages.extend([m.model_dump() for m in body.messages])
 
     # Knowledge retrieval: if agent has knowledge bases, retrieve relevant chunks
     citations = []
@@ -184,7 +189,7 @@ async def chat_stream(
 
     # Safety check on last user message
     safety = SafetyEngine(SafetyPolicy(**(agent.safety_config or {})))
-    last_msg = body.messages[-1]["content"] if body.messages else ""
+    last_msg = body.messages[-1].content if body.messages else ""
     safety_result = await safety.check_input(last_msg)
     if not safety_result.safe:
         async def error_generator():
@@ -197,7 +202,7 @@ async def chat_stream(
     # Build messages
     system_prompt = _build_system_prompt(agent)
     llm_messages = [{"role": "system", "content": system_prompt}]
-    llm_messages.extend(body.messages)
+    llm_messages.extend([m.model_dump() for m in body.messages])
 
     # Create/update conversation
     if not body.conversation_id:
