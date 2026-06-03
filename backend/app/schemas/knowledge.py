@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class CreateKnowledgeBaseRequest(BaseModel):
@@ -21,8 +21,7 @@ class CreateKnowledgeBaseRequest(BaseModel):
     rerank_enabled: bool = False
     rerank_model: Optional[str] = None
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class UpdateKnowledgeBaseRequest(BaseModel):
@@ -69,8 +68,7 @@ class KnowledgeBaseResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DocumentResponse(BaseModel):
@@ -97,8 +95,7 @@ class DocumentResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DocumentSegmentResponse(BaseModel):
@@ -120,5 +117,4 @@ class DocumentSegmentResponse(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
