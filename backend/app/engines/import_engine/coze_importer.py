@@ -5,7 +5,7 @@ Coze 数据导入器
 
 import uuid
 from typing import Any, Dict, List, Optional
-from datetime import datetime
+from datetime import UTC, datetime
 
 from .base_importer import BaseImporter, ImportAssetType, ImportResult
 
@@ -129,7 +129,7 @@ class CozeImporter(BaseImporter):
                 "max_tokens": coze_bot.get("max_tokens", 4096),
                 "variables": coze_bot.get("variables", {})
             },
-            "metadata": {"source": "coze", "original_id": coze_bot.get("bot_id"), "imported_at": datetime.utcnow().isoformat()}
+            "metadata": {"source": "coze", "original_id": coze_bot.get("bot_id"), "imported_at": datetime.now(UTC).replace(tzinfo=None).isoformat()}
         }
 
     def _convert_knowledge_format(self, coze_kb: Dict[str, Any]) -> Dict[str, Any]:
@@ -140,7 +140,7 @@ class CozeImporter(BaseImporter):
             "embedding_model": "text-embedding-ada-002",
             "chunk_size": 500, "chunk_overlap": 50, "retrieval_mode": "hybrid",
             "metadata": {"source": "coze", "original_id": coze_kb.get("dataset_id"),
-                         "document_count": coze_kb.get("doc_count", 0), "imported_at": datetime.utcnow().isoformat()}
+                         "document_count": coze_kb.get("doc_count", 0), "imported_at": datetime.now(UTC).replace(tzinfo=None).isoformat()}
         }
 
     def _convert_plugin_format(self, coze_plugin: Dict[str, Any]) -> Dict[str, Any]:
@@ -152,7 +152,7 @@ class CozeImporter(BaseImporter):
             "input_schema": coze_plugin.get("api_schema", {}),
             "handler": coze_plugin.get("api_url", ""),
             "config": {"auth_type": coze_plugin.get("auth_type", "none"), "headers": coze_plugin.get("headers", {})},
-            "metadata": {"source": "coze", "original_id": coze_plugin.get("plugin_id"), "imported_at": datetime.utcnow().isoformat()}
+            "metadata": {"source": "coze", "original_id": coze_plugin.get("plugin_id"), "imported_at": datetime.now(UTC).replace(tzinfo=None).isoformat()}
         }
 
     def _convert_workflow_format(self, coze_wf: Dict[str, Any]) -> Dict[str, Any]:
@@ -165,7 +165,7 @@ class CozeImporter(BaseImporter):
         return {
             "name": coze_wf.get("name", ""), "description": coze_wf.get("description", ""),
             "dag_config": {"nodes": nodes, "edges": edges},
-            "metadata": {"source": "coze", "original_id": coze_wf.get("workflow_id"), "imported_at": datetime.utcnow().isoformat()}
+            "metadata": {"source": "coze", "original_id": coze_wf.get("workflow_id"), "imported_at": datetime.now(UTC).replace(tzinfo=None).isoformat()}
         }
 
     def _map_node_type(self, coze_type: str) -> str:

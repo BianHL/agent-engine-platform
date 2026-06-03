@@ -98,83 +98,101 @@ class SafetyEngine:
         self._compiled_pii = {k: (re.compile(v[0]), v[1]) for k, v in self.PII_PATTERNS.items()}
 
     async def check_input(self, text: str, llm_adapter=None) -> SafetyResult:
-        issues = []
-        filtered = text
-        action = SafetyAction.PASS
+        try:
+            issues = []
+            filtered = text
+            action = SafetyAction.PASS
 
-        # 1. Injection check
-        if self.policy.check_injection:
-            injection_result = self._check_injection(text)
-            if injection_result:
-                issues.append(injection_result)
-                return SafetyResult(safe=False, issues=issues, action=SafetyAction.BLOCK)
-
-            # LLM double-check for inputs exceeding threshold
-            if llm_adapter and len(text) > 100:
-                llm_check = await self._llm_injection_check(text, llm_adapter)
-                if llm_check:
-                    issues.append(llm_check)
+            # 1. Injection check
+            if self.policy.check_injection:
+                injection_result = self._check_injection(text)
+                if injection_result:
+                    issues.append(injection_result)
                     return SafetyResult(safe=False, issues=issues, action=SafetyAction.BLOCK)
 
-        # 2. PII check
-        if self.policy.check_pii:
-            pii_issues, filtered = self._check_and_mask_pii(filtered)
-            issues.extend(pii_issues)
-            if pii_issues:
-                action = SafetyAction.MASK
+                # LLM double-check for inputs exceeding threshold
+                if llm_adapter and len(text) > 100:
+                    llm_check = await self._llm_injection_check(text, llm_adapter)
+                    if llm_check:
+                        issues.append(llm_check)
+                        return SafetyResult(safe=False, issues=issues, action=SafetyAction.BLOCK)
 
-        # 3. Sensitive words check
-        if self.policy.check_sensitive:
-            sensitive_issues = self._check_sensitive_words(filtered)
-            issues.extend(sensitive_issues)
-            if sensitive_issues:
-                action = max(action, SafetyAction.WARN, key=lambda x: list(SafetyAction).index(x))
+            # 2. PII check
+            if self.policy.check_pii:
+                pii_issues, filtered = self._check_and_mask_pii(filtered)
+                issues.extend(pii_issues)
+                if pii_issues:
+                    action = SafetyAction.MASK
 
-        safe = not any(i.action == SafetyAction.BLOCK for i in issues)
-        return SafetyResult(safe=safe, issues=issues, filtered_content=filtered if filtered != text else None, action=action)
+            # 3. Sensitive words check
+            if self.policy.check_sensitive:
+                sensitive_issues = self._check_sensitive_words(filtered)
+                issues.extend(sensitive_issues)
+                if sensitive_issues:
+                    action = max(action, SafetyAction.WARN, key=lambda x: list(SafetyAction).index(x))
+
+            safe = not any(i.action == SafetyAction.BLOCK for i in issues)
+            return SafetyResult(safe=safe, issues=issues, filtered_content=filtered if filtered != text else None, action=action)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).exception("SafetyEngine.check_input failed")
+            return SafetyResult(
+                safe=False,
+                issues=[SafetyIssue(type="engine_error", detail=f"Safety check failed: {e}", severity="high", action=SafetyAction.WARN)],
+                action=SafetyAction.WARN,
+            )
 
     async def check_output(self, text: str, llm_adapter=None) -> SafetyResult:
         """Check model output: skips injection patterns (input-specific),
         applies stricter PII masking, and always runs LLM moderation if available."""
-        issues: list[SafetyIssue] = []
-        filtered = text
-        action = SafetyAction.PASS
+        try:
+            issues: list[SafetyIssue] = []
+            filtered = text
+            action = SafetyAction.PASS
 
-        # 1. PII check with full masking for output
-        if self.policy.check_pii:
-            pii_issues, filtered = self._check_and_mask_pii(filtered, full_mask=True)
-            issues.extend(pii_issues)
-            if pii_issues:
-                action = SafetyAction.MASK
+            # 1. PII check with full masking for output
+            if self.policy.check_pii:
+                pii_issues, filtered = self._check_and_mask_pii(filtered, full_mask=True)
+                issues.extend(pii_issues)
+                if pii_issues:
+                    action = SafetyAction.MASK
 
-        # 2. Sensitive words check
-        if self.policy.check_sensitive:
-            sensitive_issues = self._check_sensitive_words(filtered)
-            issues.extend(sensitive_issues)
-            if sensitive_issues:
-                action = max(action, SafetyAction.WARN, key=lambda x: list(SafetyAction).index(x))
+            # 2. Sensitive words check
+            if self.policy.check_sensitive:
+                sensitive_issues = self._check_sensitive_words(filtered)
+                issues.extend(sensitive_issues)
+                if sensitive_issues:
+                    action = max(action, SafetyAction.WARN, key=lambda x: list(SafetyAction).index(x))
 
-        # 3. LLM moderation for all output (no length threshold)
-        if llm_adapter:
-            llm_result = await self._llm_output_moderation(text, llm_adapter)
-            if llm_result:
-                issues.append(llm_result)
-                if llm_result.action == SafetyAction.BLOCK:
-                    return SafetyResult(
-                        safe=False,
-                        issues=issues,
-                        filtered_content=filtered if filtered != text else None,
-                        action=SafetyAction.BLOCK,
-                        reason="LLM output moderation flagged unsafe content",
-                    )
+            # 3. LLM moderation for all output (no length threshold)
+            if llm_adapter:
+                llm_result = await self._llm_output_moderation(text, llm_adapter)
+                if llm_result:
+                    issues.append(llm_result)
+                    if llm_result.action == SafetyAction.BLOCK:
+                        return SafetyResult(
+                            safe=False,
+                            issues=issues,
+                            filtered_content=filtered if filtered != text else None,
+                            action=SafetyAction.BLOCK,
+                            reason="LLM output moderation flagged unsafe content",
+                        )
 
-        safe = not any(i.action == SafetyAction.BLOCK for i in issues)
-        return SafetyResult(
-            safe=safe,
-            issues=issues,
-            filtered_content=filtered if filtered != text else None,
-            action=action,
-        )
+            safe = not any(i.action == SafetyAction.BLOCK for i in issues)
+            return SafetyResult(
+                safe=safe,
+                issues=issues,
+                filtered_content=filtered if filtered != text else None,
+                action=action,
+            )
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).exception("SafetyEngine.check_output failed")
+            return SafetyResult(
+                safe=False,
+                issues=[SafetyIssue(type="engine_error", detail=f"Safety check failed: {e}", severity="high", action=SafetyAction.WARN)],
+                action=SafetyAction.WARN,
+            )
 
     # ------------------------------------------------------------------
     # LLM-based content moderation

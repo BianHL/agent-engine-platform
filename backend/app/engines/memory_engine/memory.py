@@ -417,14 +417,18 @@ class MemoryEngine:
         await self.short_term.add_message(session_id, role, content)
 
         messages = await self.short_term.get_messages(session_id)
+
+        # Run long-term extraction, working memory compression, and summarization
+        # independently so one failure doesn't block the others.
+        tasks = []
         if len(messages) >= 5 and self.long_term:
-            await self.long_term.extract_and_store(session_id, tenant_id, user_id, messages, self.llm_adapter)
-
+            tasks.append(self.long_term.extract_and_store(session_id, tenant_id, user_id, messages, self.llm_adapter))
         if len(messages) >= 10:
-            await self.working.compress(session_id, messages, self.llm_adapter)
+            tasks.append(self.working.compress(session_id, messages, self.llm_adapter))
+        tasks.append(self.summarization.maybe_summarize(session_id, messages))
 
-        # 短期记忆超限时触发摘要压缩
-        await self.summarization.maybe_summarize(session_id, messages)
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
 
     async def get_context(self, session_id: str, tenant_id: str, user_id: str, query: str = "") -> dict:
         short_term = await self.short_term.get_messages(session_id)
@@ -452,4 +456,12 @@ class MemoryEngine:
         }
 
     async def clear_session(self, session_id: str):
+        """Clear all memory tiers for a session."""
         await self.short_term.clear(session_id)
+        await self.working.compress(session_id, [], None)  # clears via overwrite
+        # Clear working memory key directly
+        key = f"memory:working:{session_id}"
+        await self.short_term.redis.delete(key)
+        # Clear summary key
+        summary_key = f"memory:summary:{session_id}"
+        await self.short_term.redis.delete(summary_key)

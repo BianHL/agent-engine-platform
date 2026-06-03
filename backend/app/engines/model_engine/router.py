@@ -84,6 +84,8 @@ class ModelRouter:
             from app.core.exceptions import AllProvidersUnavailableError
             raise AllProvidersUnavailableError(f"No healthy endpoints for {model_name}")
         total = sum(e.weight for e in healthy)
+        if total <= 0:
+            return healthy[0]
         import random
         r = random.uniform(0, total)
         cumulative = 0.0
@@ -155,7 +157,7 @@ class ModelRouter:
             if not ok:
                 candidates = model_candidates["low"]
 
-        # 5. Select first available
+        # 5. Select first available from candidates
         for model_name in candidates:
             try:
                 endpoint = await self.select_provider(model_name)
@@ -163,9 +165,16 @@ class ModelRouter:
             except Exception:
                 continue
 
-        # 6. Fallback to any available
-        endpoint = await self.select_provider(candidates[0])
-        return endpoint, candidates[0]
+        # 6. Last resort: try any registered model
+        for model_name in self._endpoints:
+            try:
+                endpoint = await self.select_provider(model_name)
+                return endpoint, model_name
+            except Exception:
+                continue
+
+        from app.core.exceptions import AllProvidersUnavailableError
+        raise AllProvidersUnavailableError("No healthy endpoints available for any registered model")
 
 
 class TaskComplexity(Enum):

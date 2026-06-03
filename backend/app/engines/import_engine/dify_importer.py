@@ -6,7 +6,7 @@ Dify 数据导入器
 import json
 import uuid
 from typing import Any, Dict, List, Optional
-from datetime import datetime
+from datetime import UTC, datetime
 
 from .base_importer import BaseImporter, ImportAssetType, ImportResult
 
@@ -198,7 +198,7 @@ class DifyImporter(BaseImporter):
             "metadata": {
                 "source": "dify",
                 "original_id": dify_agent.get("id"),
-                "imported_at": datetime.utcnow().isoformat()
+                "imported_at": datetime.now(UTC).replace(tzinfo=None).isoformat()
             }
         }
 
@@ -215,7 +215,7 @@ class DifyImporter(BaseImporter):
                 "source": "dify",
                 "original_id": dify_kb.get("id"),
                 "document_count": dify_kb.get("document_count", 0),
-                "imported_at": datetime.utcnow().isoformat()
+                "imported_at": datetime.now(UTC).replace(tzinfo=None).isoformat()
             }
         }
 
@@ -234,7 +234,7 @@ class DifyImporter(BaseImporter):
             "metadata": {
                 "source": "dify",
                 "original_id": dify_tool.get("id"),
-                "imported_at": datetime.utcnow().isoformat()
+                "imported_at": datetime.now(UTC).replace(tzinfo=None).isoformat()
             }
         }
 
@@ -263,7 +263,7 @@ class DifyImporter(BaseImporter):
             "metadata": {
                 "source": "dify",
                 "original_id": dify_wf.get("id"),
-                "imported_at": datetime.utcnow().isoformat()
+                "imported_at": datetime.now(UTC).replace(tzinfo=None).isoformat()
             }
         }
 

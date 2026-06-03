@@ -184,8 +184,8 @@ class WebParser(BaseParser):
 
     def _get_timestamp(self) -> str:
         """获取当前时间戳"""
-        from datetime import datetime
-        return datetime.utcnow().isoformat()
+        from datetime import UTC, datetime
+        return datetime.now(UTC).replace(tzinfo=None).isoformat()
 
     async def extract_links(self, url: str) -> List[str]:
         """提取网页中的链接"""
