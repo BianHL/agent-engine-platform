@@ -115,7 +115,7 @@ export default function ConversationsPage() {
           <Button size="small" icon={<MessageOutlined />} onClick={() => handleViewMessages(record)}>
             Messages
           </Button>
-          <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)} />
+          <Button size="small" danger icon={<DeleteOutlined />} aria-label="Delete conversation" onClick={() => handleDelete(record.id)} />
         </Space>
       ),
     },

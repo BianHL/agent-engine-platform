@@ -22,6 +22,7 @@ export default function AgentsPage() {
   const router = useRouter();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -31,9 +32,11 @@ export default function AgentsPage() {
 
   const loadAgents = async () => {
     try {
+      setError(null);
       const data = await api.listAgents();
       setAgents(data.items || []);
     } catch {
+      setError('Failed to load agents');
       message.error('Failed to load agents');
     } finally {
       setLoading(false);
@@ -84,6 +87,22 @@ export default function AgentsPage() {
             <div key={i} className="h-48 rounded-lg bg-stone-01 animate-pulse" />
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <ExclamationCircleOutlined style={{ fontSize: 48, color: 'var(--ae-danger)', marginBottom: 16 }} />
+        <Text style={{ fontSize: 16, fontWeight: 600, color: 'var(--ae-text)', marginBottom: 8 }}>
+          {error}
+        </Text>
+        <Button
+          onClick={() => { setLoading(true); loadAgents(); }}
+        >
+          Retry
+        </Button>
       </div>
     );
   }

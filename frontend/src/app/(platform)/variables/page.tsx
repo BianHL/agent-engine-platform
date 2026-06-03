@@ -10,7 +10,7 @@ import {
   DatabaseOutlined, GlobalOutlined, UserOutlined, SettingOutlined,
   SearchOutlined, ReloadOutlined
 } from '@ant-design/icons';
-import { api } from '@/lib/api';
+import api from '@/lib/api';
 
 const { Title, Text, Paragraph } = Typography;
 

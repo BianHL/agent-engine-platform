@@ -6,6 +6,7 @@ import { useRouter, useParams } from 'next/navigation';
 import api from '@/lib/api';
 import { MarketplaceItem, MarketplaceRating } from '@/types/marketplace';
 import WhiteBoxView from '@/components/marketplace/WhiteBoxView';
+import MarkdownRenderer from '@/components/MarkdownRenderer';
 
 const { Title, Paragraph, Text } = Typography;
 const { TextArea } = Input;
@@ -174,7 +175,7 @@ export default function MarketplaceItemDetailPage() {
               children: (
                 <div style={{ minHeight: 200 }}>
                   {item.description ? (
-                    <div dangerouslySetInnerHTML={{ __html: item.description.replace(/\n/g, '<br/>') }} />
+                    <MarkdownRenderer content={item.description} />
                   ) : (
                     <Paragraph type="secondary">暂无详细介绍</Paragraph>
                   )}

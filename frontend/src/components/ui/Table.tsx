@@ -12,12 +12,14 @@ interface TableProps<T> {
   data: T[];
   columns: Column<T>[];
   className?: string;
+  emptyMessage?: string;
 }
 
 export default function Table<T extends Record<string, unknown>>({
   data,
   columns,
   className = '',
+  emptyMessage = 'No data',
 }: TableProps<T>) {
   return (
     <div
@@ -55,29 +57,45 @@ export default function Table<T extends Record<string, unknown>>({
           </tr>
         </thead>
         <tbody>
-          {data.map((item, index) => (
-            <tr
-              key={index}
-              className="table-row"
-              style={{
-                borderBottom: '1px solid var(--ae-line)',
-                transition: 'background 180ms ease',
-              }}
-            >
-              {columns.map(col => (
-                <td
-                  key={col.key}
-                  style={{
-                    padding: '12px 16px',
-                    color: 'var(--ae-text)',
-                    borderBottom: index < data.length - 1 ? '1px solid var(--ae-line)' : 'none',
-                  }}
-                >
-                  {col.render ? col.render(item) : String(item[col.key] ?? '')}
-                </td>
-              ))}
+          {data.length === 0 ? (
+            <tr>
+              <td
+                colSpan={columns.length}
+                style={{
+                  padding: '32px 16px',
+                  textAlign: 'center',
+                  color: 'var(--ae-muted)',
+                  fontSize: 14,
+                }}
+              >
+                {emptyMessage}
+              </td>
             </tr>
-          ))}
+          ) : (
+            data.map((item, index) => (
+              <tr
+                key={index}
+                className="table-row"
+                style={{
+                  borderBottom: '1px solid var(--ae-line)',
+                  transition: 'background 180ms ease',
+                }}
+              >
+                {columns.map(col => (
+                  <td
+                    key={col.key}
+                    style={{
+                      padding: '12px 16px',
+                      color: 'var(--ae-text)',
+                      borderBottom: index < data.length - 1 ? '1px solid var(--ae-line)' : 'none',
+                    }}
+                  >
+                    {col.render ? col.render(item) : String(item[col.key] ?? '')}
+                  </td>
+                ))}
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
       <style jsx>{`

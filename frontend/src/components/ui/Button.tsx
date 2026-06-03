@@ -9,6 +9,7 @@ interface ButtonProps {
   disabled?: boolean;
   className?: string;
   type?: 'button' | 'submit';
+  'aria-label'?: string;
 }
 
 export default function Button({
@@ -19,6 +20,7 @@ export default function Button({
   disabled = false,
   className = '',
   type = 'button',
+  'aria-label': ariaLabel,
 }: ButtonProps) {
   const sizeStyles = {
     sm: { padding: '8px 14px', fontSize: 12, borderRadius: 'var(--ae-radius-md)' },
@@ -55,6 +57,8 @@ export default function Button({
       type={type}
       onClick={onClick}
       disabled={disabled}
+      aria-label={ariaLabel}
+      aria-disabled={disabled || undefined}
       className={`ae-btn ${className}`}
       style={{
         ...s,

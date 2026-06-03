@@ -186,12 +186,13 @@ export default function DashboardPage() {
 
   const fetchDashboardData = useCallback(() => {
     setLoading(true);
-    Promise.allSettled([
+    const settled = Promise.allSettled([
       api.get('/usage/daily'),
       api.get('/usage/models'),
       api.get('/usage/agents'),
       api.get('/usage/feedback'),
-    ]).then(([usageRes, modelRes, agentRes, feedbackRes]) => {
+    ]);
+    settled.then(([usageRes, modelRes, agentRes, feedbackRes]) => {
       if (usageRes.status === 'fulfilled') {
         const data = usageRes.value;
         setUsage(data);
@@ -212,9 +213,17 @@ export default function DashboardPage() {
       if (feedbackRes.status === 'fulfilled') {
         setFeedback(feedbackRes.value);
       }
-    }).catch(() => {
-      message.error('Failed to load dashboard data');
     }).finally(() => setLoading(false));
+
+    // Check for partial failures after all settled
+    settled.then((results) => {
+      const failed = results.filter((r) => r.status === 'rejected').length;
+      if (failed === results.length) {
+        message.error('Failed to load dashboard data');
+      } else if (failed > 0) {
+        message.warning('Some dashboard data could not be loaded');
+      }
+    });
   }, []);
 
   useEffect(() => { fetchDashboardData(); }, [fetchDashboardData]);
