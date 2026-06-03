@@ -1,9 +1,9 @@
 'use client';
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { Card, Row, Col, Typography, Spin, message, Tag } from 'antd';
+import { Card, Row, Col, Typography, Spin, message, Tag, Button } from 'antd';
 import {
   ArrowUpOutlined, RobotOutlined, MessageOutlined,
-  DollarOutlined, ThunderboltOutlined, ClockCircleOutlined,
+  DollarOutlined, ThunderboltOutlined, ClockCircleOutlined, ReloadOutlined,
 } from '@ant-design/icons';
 import ReactECharts from 'echarts-for-react';
 import api from '@/lib/api';
@@ -183,16 +183,17 @@ export default function DashboardPage() {
   const [totalTokens, setTotalTokens] = useState(0);
   const [totalCost, setTotalCost] = useState(0);
   const [totalConversations, setTotalConversations] = useState(0);
+  const [allFailed, setAllFailed] = useState(false);
 
   const fetchDashboardData = useCallback(() => {
     setLoading(true);
-    const settled = Promise.allSettled([
+    setAllFailed(false);
+    Promise.allSettled([
       api.get('/usage/daily'),
       api.get('/usage/models'),
       api.get('/usage/agents'),
       api.get('/usage/feedback'),
-    ]);
-    settled.then(([usageRes, modelRes, agentRes, feedbackRes]) => {
+    ]).then(([usageRes, modelRes, agentRes, feedbackRes]) => {
       if (usageRes.status === 'fulfilled') {
         const data = usageRes.value;
         setUsage(data);
@@ -213,17 +214,17 @@ export default function DashboardPage() {
       if (feedbackRes.status === 'fulfilled') {
         setFeedback(feedbackRes.value);
       }
-    }).finally(() => setLoading(false));
 
-    // Check for partial failures after all settled
-    settled.then((results) => {
+      // Check for failures
+      const results = [usageRes, modelRes, agentRes, feedbackRes];
       const failed = results.filter((r) => r.status === 'rejected').length;
       if (failed === results.length) {
+        setAllFailed(true);
         message.error('Failed to load dashboard data');
       } else if (failed > 0) {
         message.warning('Some dashboard data could not be loaded');
       }
-    });
+    }).finally(() => setLoading(false));
   }, []);
 
   useEffect(() => { fetchDashboardData(); }, [fetchDashboardData]);
@@ -371,6 +372,22 @@ export default function DashboardPage() {
           <div className="lg:col-span-2 h-72 rounded-lg bg-stone-01 animate-pulse" />
           <div className="h-72 rounded-lg bg-stone-01 animate-pulse" />
         </div>
+      </div>
+    );
+  }
+
+  if (allFailed) {
+    return (
+      <div style={{ textAlign: 'center', padding: '120px 0' }}>
+        <Title level={4} style={{ color: 'var(--ae-text)', marginBottom: 8 }}>
+          Failed to load dashboard
+        </Title>
+        <p style={{ color: 'var(--ae-muted)', marginBottom: 24 }}>
+          Unable to fetch dashboard data. Please try again.
+        </p>
+        <Button type="primary" icon={<ReloadOutlined />} onClick={fetchDashboardData}>
+          Retry
+        </Button>
       </div>
     );
   }

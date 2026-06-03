@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { Card, Table, Button, Typography, Tag, message, Space, Modal, Form, Input, InputNumber, Select } from 'antd';
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { KnowledgeBase } from '@/types';
@@ -22,26 +22,41 @@ export default function KnowledgePage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form] = Form.useForm();
 
   const fetchKbs = () => {
     setLoading(true);
-    api.listKnowledgeBases().then((d) => setKbs(d.items || [])).catch(() => message.error('Failed to load')).finally(() => setLoading(false));
+    setError(null);
+    api.listKnowledgeBases()
+      .then((d) => { setKbs(d.items || []); setError(null); })
+      .catch((err) => {
+        const msg = err?.message || 'Failed to load knowledge bases';
+        setError(msg);
+        message.error(msg);
+      })
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => { fetchKbs(); }, []);
 
   const handleCreate = async () => {
+    let values;
     try {
-      const values = await form.validateFields();
+      values = await form.validateFields();
+    } catch {
+      // Form validation errors are shown inline by Ant Design
+      return;
+    }
+    try {
       setCreating(true);
       await api.createKnowledgeBase(values);
       message.success('Knowledge base created');
       setModalOpen(false);
       form.resetFields();
       fetchKbs();
-    } catch {
-      message.error('Failed to create knowledge base');
+    } catch (err: any) {
+      message.error(err?.message || 'Failed to create knowledge base');
     } finally {
       setCreating(false);
     }
@@ -78,7 +93,20 @@ export default function KnowledgePage() {
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>Create</Button>
       </div>
       <Card>
-        <Table dataSource={kbs} columns={columns} loading={loading} rowKey="id" />
+        {error && !loading ? (
+          <div style={{ textAlign: 'center', padding: '48px 0' }}>
+            <p style={{ color: 'var(--ae-muted)', marginBottom: 16 }}>{error}</p>
+            <Button icon={<ReloadOutlined />} onClick={fetchKbs}>
+              Retry
+            </Button>
+          </div>
+        ) : !loading && kbs.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--ae-muted)' }}>
+            No knowledge bases yet. Click &quot;Create&quot; to get started.
+          </div>
+        ) : (
+          <Table dataSource={kbs} columns={columns} loading={loading} rowKey="id" />
+        )}
       </Card>
 
       <Modal
