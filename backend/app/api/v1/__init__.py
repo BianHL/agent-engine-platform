@@ -16,6 +16,7 @@ from app.api.v1 import (
     model_compare,
     models as models_router,
     multi_agent,
+    observability,
     plugins,
     publish,
     roles,
@@ -63,3 +64,4 @@ api_router.include_router(variables.router)
 api_router.include_router(publish.router)
 api_router.include_router(compliance.router)
 api_router.include_router(plugins.router)
+api_router.include_router(observability.router)
