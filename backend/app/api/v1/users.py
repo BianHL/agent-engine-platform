@@ -1,5 +1,6 @@
 """User management API endpoints."""
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -183,3 +184,30 @@ async def deactivate_user(
     db_user.status = "inactive"
     await db.flush()
     return None
+
+
+class ResetPasswordRequest(BaseModel):
+    new_password: str
+
+
+@router.post("/{user_id}/reset-password")
+async def reset_password(
+    user_id: str,
+    body: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+    user: dict = Depends(require_role("admin"))):
+    """Reset a user's password (admin only)."""
+    stmt = select(UserModel).where(
+        UserModel.id == user_id,
+        UserModel.tenant_id == user["tenant_id"])
+    result = await db.execute(stmt)
+    db_user = result.scalar_one_or_none()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if len(body.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+
+    db_user.hashed_password = get_password_hash(body.new_password)
+    await db.flush()
+    return {"status": "ok"}
