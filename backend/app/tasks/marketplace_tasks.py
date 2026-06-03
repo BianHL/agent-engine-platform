@@ -82,4 +82,4 @@ def cleanup_bottom_performers():
         logger.info("Marketplace cleanup completed: %s", stats)
         return stats
 
-    return asyncio.get_event_loop().run_until_complete(_cleanup())
+    return asyncio.run(_cleanup())

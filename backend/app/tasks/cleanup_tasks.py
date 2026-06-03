@@ -81,7 +81,7 @@ def cleanup_expired_sessions(max_inactive_days: int = 30):
             )
         )
 
-    return asyncio.get_event_loop().run_until_complete(_cleanup())
+    return asyncio.run(_cleanup())
 
 
 @celery_app.task(name="app.tasks.cleanup_tasks.cleanup_old_audit_logs")
@@ -118,4 +118,4 @@ def cleanup_old_audit_logs(retention_days: int = 90):
             logger.info(f"Cleaned up {len(ids)} old audit logs")
             return {"deleted": len(ids)}
 
-    return asyncio.get_event_loop().run_until_complete(_cleanup())
+    return asyncio.run(_cleanup())
