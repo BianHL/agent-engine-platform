@@ -1,7 +1,7 @@
 """Agent related models."""
 from datetime import UTC, datetime
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, JSON, Numeric, String, Text
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, Numeric, String, Text
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base, EnterpriseMixin, OptimisticLockMixin, generate_uuid

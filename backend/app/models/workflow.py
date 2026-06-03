@@ -85,8 +85,8 @@ class WorkflowExecutionModel(Base):
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
     workflow_id = Column(String(36), ForeignKey("workflows.id"), index=True, nullable=False)
-    workflow_version = Column(Integer, nullable=False)
-    tenant_id = Column(String(36), index=True, nullable=False)
+    workflow_version = Column(Integer, nullable=False, default=1)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), index=True, nullable=False)
     trigger_type = Column(String(20), default="manual")
     trigger_id = Column(String(36), nullable=True)
     status = Column(String(20), default="running", index=True)

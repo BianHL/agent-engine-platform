@@ -76,7 +76,7 @@ class UserRoleModel(Base):
     id = Column(String(36), primary_key=True, default=generate_uuid)
     user_id = Column(String(36), ForeignKey("users.id"), index=True, nullable=False)
     role_id = Column(String(36), ForeignKey("roles.id"), index=True, nullable=False)
-    tenant_id = Column(String(36), index=True, nullable=False)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), index=True, nullable=False)
     created_by = Column(String(36), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
 
@@ -91,7 +91,7 @@ class UserSessionModel(Base):
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
     user_id = Column(String(36), ForeignKey("users.id"), index=True, nullable=False)
-    tenant_id = Column(String(36), nullable=False)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), nullable=False)
     session_token = Column(String(500), nullable=False)
     refresh_token = Column(String(500), nullable=True)
     device_type = Column(String(30), nullable=True)

@@ -193,7 +193,7 @@ class ModelConfigModel(Base, OptimisticLockMixin):
     __tablename__ = "model_configs"
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    tenant_id = Column(String(36), index=True, nullable=False)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), index=True, nullable=False)
     provider_id = Column(String(36), ForeignKey("model_providers.id"), index=True, nullable=False)
     model_name = Column(String(100), nullable=False)
     model_type = Column(String(20), nullable=False, index=True)
@@ -224,8 +224,8 @@ class UsageLogModel(Base):
     __tablename__ = "usage_logs"
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    tenant_id = Column(String(36), index=True, nullable=False)
-    user_id = Column(String(36), index=True)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), index=True, nullable=False)
+    user_id = Column(String(36), ForeignKey("users.id"), index=True, nullable=True)
     agent_id = Column(String(36), nullable=True, index=True)
     conversation_id = Column(String(36), nullable=True)
     message_id = Column(String(36), nullable=True)
@@ -275,7 +275,7 @@ class TenantUsageMonthlyModel(Base):
     __tablename__ = "tenant_usage_monthly"
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    tenant_id = Column(String(36), nullable=False)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), index=True, nullable=False)
     year_month = Column(String(7), nullable=False)
     total_requests = Column(Integer, default=0)
     total_input_tokens = Column(BigInteger, default=0)
@@ -335,8 +335,8 @@ class ToolExecutionModel(Base):
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
     tool_id = Column(String(36), ForeignKey("tools.id"), index=True, nullable=False)
-    tenant_id = Column(String(36), ForeignKey("tenants.id"), nullable=False)
-    user_id = Column(String(36), ForeignKey("users.id"), nullable=True)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), index=True, nullable=False)
+    user_id = Column(String(36), ForeignKey("users.id"), index=True, nullable=True)
     conversation_id = Column(String(36), nullable=True, index=True)
     message_id = Column(String(36), nullable=True)
     agent_id = Column(String(36), nullable=True)
@@ -382,7 +382,7 @@ class EvaluationRunModel(Base):
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
     evaluation_id = Column(String(36), ForeignKey("evaluations.id"), index=True, nullable=False)
-    tenant_id = Column(String(36), ForeignKey("tenants.id"), nullable=False)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), index=True, nullable=False)
     status = Column(String(20), default="pending", index=True)
     started_at = Column(DateTime)
     completed_at = Column(DateTime)
@@ -404,7 +404,7 @@ class EvaluationResultModel(Base):
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
     run_id = Column(String(36), ForeignKey("evaluation_runs.id"), index=True, nullable=False)
-    evaluation_id = Column(String(36), nullable=False, index=True)
+    evaluation_id = Column(String(36), ForeignKey("evaluations.id"), nullable=False, index=True)
     test_case_index = Column(Integer, nullable=False)
     input_text = Column(Text)
     expected_output = Column(Text)
@@ -447,7 +447,7 @@ class AccountIntegrateModel(Base):
     id = Column(String(36), primary_key=True, default=generate_uuid)
     user_id = Column(String(36), ForeignKey("users.id"), index=True, nullable=False)
     provider_id = Column(String(36), ForeignKey("oauth_providers.id"), index=True, nullable=False)
-    tenant_id = Column(String(36), nullable=False, index=True)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), nullable=False, index=True)
     external_id = Column(String(200), nullable=False)
     external_username = Column(String(200), nullable=True)
     external_email = Column(String(200), nullable=True)
@@ -550,7 +550,7 @@ class AppInstallationModel(Base):
     id = Column(String(36), primary_key=True, default=generate_uuid)
     app_id = Column(String(36), ForeignKey("marketplace_apps.id"), index=True, nullable=False)
     tenant_id = Column(String(36), ForeignKey("tenants.id"), nullable=False, index=True)
-    installed_by = Column(String(36), ForeignKey("users.id"), nullable=False)
+    installed_by = Column(String(36), ForeignKey("users.id"), index=True, nullable=False)
     config = Column(JSON, default=dict)
     status = Column(String(20), default="active")
     installed_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
@@ -598,7 +598,7 @@ class FileAssetModel(Base):
     resource_id = Column(String(36), nullable=True)
     is_public = Column(Boolean, default=False)
     access_url = Column(String(500), nullable=True)
-    uploaded_by = Column(String(36), ForeignKey("users.id"), nullable=False)
+    uploaded_by = Column(String(36), ForeignKey("users.id"), index=True, nullable=False)
     deleted_at = Column(DateTime, nullable=True, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
 
@@ -615,7 +615,7 @@ class TenantInvitationModel(Base):
     email = Column(String(200), nullable=False, index=True)
     role = Column(String(20), default="user")
     role_id = Column(String(36), nullable=True)
-    invited_by = Column(String(36), ForeignKey("users.id"), nullable=False)
+    invited_by = Column(String(36), ForeignKey("users.id"), index=True, nullable=False)
     status = Column(String(20), default="pending", index=True)
     token = Column(String(64), unique=True, nullable=False)
     expires_at = Column(DateTime)
@@ -657,7 +657,7 @@ class TraceSpanModel(Base):
     parent_span_id = Column(String(36), nullable=True, index=True)
     span_type = Column(String(30), nullable=False)
     name = Column(String(200), nullable=False)
-    tenant_id = Column(String(36), nullable=False, index=True)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), nullable=False, index=True)
     user_id = Column(String(36), nullable=True)
     agent_id = Column(String(36), nullable=True)
     conversation_id = Column(String(36), nullable=True)

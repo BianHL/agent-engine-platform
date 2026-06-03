@@ -1,7 +1,7 @@
 """Multi-Agent/Crew related models."""
 from datetime import UTC, datetime
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, JSON, Numeric, String, Text
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, Numeric, String, Text
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base, EnterpriseMixin, generate_uuid
@@ -87,4 +87,4 @@ class HandoffModel(Base, EnterpriseMixin):
     last_handoff_at = Column(DateTime, nullable=True)
 
     # relationships
-    source_agent = relationship("AgentModel", foreign_keys=[source_agent_id])
+    source_agent = relationship("AgentModel", foreign_keys=[source_agent_id], overlaps="handoffs")

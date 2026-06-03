@@ -44,7 +44,7 @@ class DocumentModel(Base, EnterpriseMixin, OptimisticLockMixin):
     __tablename__ = "documents"
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    tenant_id = Column(String(36), index=True, nullable=False)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), index=True, nullable=False)
     knowledge_base_id = Column(String(36), ForeignKey("knowledge_bases.id"), index=True, nullable=False)
     filename = Column(String(255), nullable=False)
     file_type = Column(String(20))
@@ -77,7 +77,7 @@ class DocumentSegmentModel(Base):
     id = Column(String(36), primary_key=True, default=generate_uuid)
     document_id = Column(String(36), ForeignKey("documents.id"), index=True, nullable=False)
     tenant_id = Column(String(36), ForeignKey("tenants.id"), nullable=False)
-    knowledge_base_id = Column(String(36), index=True, nullable=False)
+    knowledge_base_id = Column(String(36), ForeignKey("knowledge_bases.id"), index=True, nullable=False)
     content = Column(Text, nullable=False)
     content_hash = Column(String(64), nullable=True, index=True)
     segment_index = Column(Integer, nullable=False)

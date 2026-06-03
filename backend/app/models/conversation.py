@@ -1,7 +1,7 @@
 """Conversation and Message models."""
 from datetime import UTC, datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, JSON, Numeric, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, JSON, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base, generate_uuid
@@ -45,7 +45,7 @@ class MessageModel(Base):
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
     conversation_id = Column(String(36), ForeignKey("conversations.id"), index=True, nullable=False)
-    tenant_id = Column(String(36), index=True, nullable=False)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), index=True, nullable=False)
     role = Column(String(20), nullable=False, index=True)
     content = Column(Text, nullable=False)
     input_tokens = Column(Integer, default=0)
