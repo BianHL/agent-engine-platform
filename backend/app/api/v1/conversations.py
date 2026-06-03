@@ -49,6 +49,23 @@ async def create_conversation(
     return result
 
 
+@router.get("/search")
+async def search_conversations(
+    query: str = Query(..., min_length=1, description="Search query"),
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    user: dict = Depends(get_current_user)):
+    """Search conversations by title or message content."""
+    svc = ConversationService(db)
+    return await svc.search(
+        tenant_id=user["tenant_id"],
+        query=query,
+        user_id=user["id"],
+        page=page,
+        size=size)
+
+
 @router.get("/{conversation_id}")
 async def get_conversation(
     conversation_id: str,
