@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,36 +28,41 @@ async def list_operation_logs(
     user: dict = Depends(get_current_user),
 ):
     """List audit logs with filters."""
-    stmt = (
-        select(OperationLogModel)
-        .where(OperationLogModel.tenant_id == user["tenant_id"])
-        .order_by(OperationLogModel.created_at.desc())
-    )
+    try:
+        stmt = (
+            select(OperationLogModel)
+            .where(OperationLogModel.tenant_id == user["tenant_id"])
+            .order_by(OperationLogModel.created_at.desc())
+        )
 
-    if action:
-        stmt = stmt.where(OperationLogModel.action == action)
-    if resource_type:
-        stmt = stmt.where(OperationLogModel.resource_type == resource_type)
-    if user_id:
-        stmt = stmt.where(OperationLogModel.user_id == user_id)
-    if start_date:
-        stmt = stmt.where(OperationLogModel.created_at >= datetime.fromisoformat(start_date))
-    if end_date:
-        stmt = stmt.where(OperationLogModel.created_at <= datetime.fromisoformat(end_date))
+        if action:
+            stmt = stmt.where(OperationLogModel.action == action)
+        if resource_type:
+            stmt = stmt.where(OperationLogModel.resource_type == resource_type)
+        if user_id:
+            stmt = stmt.where(OperationLogModel.user_id == user_id)
+        if start_date:
+            stmt = stmt.where(OperationLogModel.created_at >= datetime.fromisoformat(start_date))
+        if end_date:
+            stmt = stmt.where(OperationLogModel.created_at <= datetime.fromisoformat(end_date))
 
-    stmt = stmt.offset((page - 1) * size).limit(size)
-    result = await db.execute(stmt)
+        stmt = stmt.offset((page - 1) * size).limit(size)
+        result = await db.execute(stmt)
 
-    return [
-        {
-            "id": log.id,
-            "action": log.action,
-            "resource_type": log.resource_type,
-            "resource_id": log.resource_id,
-            "user_id": log.user_id,
-            "ip_address": log.ip_address,
-            "details": log.details,
-            "created_at": log.created_at.isoformat() if log.created_at else None,
-        }
-        for log in result.scalars().all()
-    ]
+        return [
+            {
+                "id": log.id,
+                "action": log.action,
+                "resource_type": log.resource_type,
+                "resource_id": log.resource_id,
+                "user_id": log.user_id,
+                "ip_address": log.ip_address,
+                "details": log.details,
+                "created_at": log.created_at.isoformat() if log.created_at else None,
+            }
+            for log in result.scalars().all()
+        ]
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to list audit logs: {str(e)}")
