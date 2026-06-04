@@ -404,6 +404,224 @@ export default function NodeConfigPanel({
           </>
         );
 
+      case 'start':
+        return (
+          <>
+            <Form.Item
+              name="input_variables"
+              label="Input Variables"
+              extra="Define variables that this workflow accepts as input"
+            >
+              <Input.TextArea
+                rows={4}
+                placeholder={'[\n  {"name": "query", "type": "string", "required": true},\n  {"name": "options", "type": "object", "required": false}\n]'}
+                style={{ fontFamily: 'monospace' }}
+              />
+            </Form.Item>
+          </>
+        );
+
+      case 'end':
+        return (
+          <>
+            <Form.Item
+              name="output_variables"
+              label="Output Variables"
+              extra="Define what this workflow returns"
+            >
+              <Input.TextArea
+                rows={4}
+                placeholder={'[\n  {"name": "result", "type": "string"},\n  {"name": "score", "type": "number"}\n]'}
+                style={{ fontFamily: 'monospace' }}
+              />
+            </Form.Item>
+          </>
+        );
+
+      case 'knowledge':
+        return (
+          <>
+            <Form.Item
+              name="knowledge_base_ids"
+              label="Knowledge Bases"
+              rules={[{ required: true }]}
+            >
+              <Select
+                mode="multiple"
+                placeholder="Select knowledge bases"
+                options={[]}
+              />
+            </Form.Item>
+            <Form.Item
+              name="query_variable"
+              label="Query Variable"
+              rules={[{ required: true }]}
+              extra="Variable containing the search query"
+            >
+              <Input placeholder="{{input.query}}" />
+            </Form.Item>
+            <Form.Item name="top_k" label="Top K Results">
+              <InputNumber min={1} max={20} style={{ width: '100%' }} />
+            </Form.Item>
+            <Form.Item name="score_threshold" label="Score Threshold">
+              <InputNumber min={0} max={1} step={0.05} style={{ width: '100%' }} />
+            </Form.Item>
+            <Form.Item name="retrieval_mode" label="Retrieval Mode">
+              <Select
+                options={[
+                  { value: 'vector', label: 'Vector Search' },
+                  { value: 'full_text', label: 'Full Text Search' },
+                  { value: 'hybrid', label: 'Hybrid (Recommended)' },
+                ]}
+              />
+            </Form.Item>
+          </>
+        );
+
+      case 'question_classifier':
+        return (
+          <>
+            <Form.Item
+              name="input_variable"
+              label="Input Variable"
+              rules={[{ required: true }]}
+            >
+              <Input placeholder="{{input}}" />
+            </Form.Item>
+            <Form.Item name="model" label="Model">
+              <Select
+                options={[
+                  { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
+                  { value: 'gpt-4o', label: 'GPT-4o' },
+                ]}
+              />
+            </Form.Item>
+            <Form.Item
+              name="classes"
+              label="Classification Classes"
+              extra="JSON array of classes with name and description"
+            >
+              <Input.TextArea
+                rows={4}
+                placeholder={'[\n  {"name": "Complaint", "description": "Customer complaints"},\n  {"name": "Inquiry", "description": "General questions"}\n]'}
+                style={{ fontFamily: 'monospace' }}
+              />
+            </Form.Item>
+          </>
+        );
+
+      case 'parameter_extractor':
+        return (
+          <>
+            <Form.Item
+              name="input_variable"
+              label="Input Variable"
+              rules={[{ required: true }]}
+            >
+              <Input placeholder="{{input}}" />
+            </Form.Item>
+            <Form.Item name="model" label="Model">
+              <Select
+                options={[
+                  { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
+                  { value: 'gpt-4o', label: 'GPT-4o' },
+                ]}
+              />
+            </Form.Item>
+            <Form.Item
+              name="parameters"
+              label="Parameters to Extract"
+              extra="JSON array of parameter definitions"
+            >
+              <Input.TextArea
+                rows={4}
+                placeholder={'[\n  {"name": "name", "type": "string", "required": true},\n  {"name": "date", "type": "string", "required": false}\n]'}
+                style={{ fontFamily: 'monospace' }}
+              />
+            </Form.Item>
+          </>
+        );
+
+      case 'template':
+        return (
+          <>
+            <Form.Item
+              name="template"
+              label="Template"
+              rules={[{ required: true }]}
+              extra="Use {{variable}} for dynamic values"
+            >
+              <Input.TextArea
+                rows={6}
+                placeholder="Hello {{name}},\n\nYour order #{{order_id}} is ready."
+                style={{ fontFamily: 'monospace' }}
+              />
+            </Form.Item>
+          </>
+        );
+
+      case 'variable':
+        return (
+          <>
+            <Form.Item
+              name="operations"
+              label="Variable Operations"
+              extra="JSON array of variable assignments"
+            >
+              <Input.TextArea
+                rows={4}
+                placeholder={'[\n  {"variable": "output", "operator": "assign", "value": "{{input}}"},\n  {"variable": "count", "operator": "add", "value": "1"}\n]'}
+                style={{ fontFamily: 'monospace' }}
+              />
+            </Form.Item>
+          </>
+        );
+
+      case 'tool':
+        return (
+          <>
+            <Form.Item
+              name="tool_name"
+              label="Tool"
+              rules={[{ required: true }]}
+            >
+              <Select
+                placeholder="Select a tool"
+                options={[]}
+              />
+            </Form.Item>
+            <Form.Item
+              name="tool_params"
+              label="Tool Parameters"
+              extra="JSON object with tool parameters"
+            >
+              <Input.TextArea
+                rows={4}
+                placeholder='{"query": "{{input}}"}'
+                style={{ fontFamily: 'monospace' }}
+              />
+            </Form.Item>
+          </>
+        );
+
+      case 'answer':
+        return (
+          <>
+            <Form.Item
+              name="answer_template"
+              label="Answer Template"
+              rules={[{ required: true }]}
+              extra="Use {{variable}} to include dynamic content"
+            >
+              <Input.TextArea
+                rows={6}
+                placeholder="{{llm_response}}"
+                style={{ fontFamily: 'monospace' }}
+              />
+            </Form.Item>
+          </>
+        );
+
       default:
         return null;
     }
