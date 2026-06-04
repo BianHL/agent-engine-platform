@@ -30,17 +30,20 @@ class WorkflowExecutionService:
         variables: Optional[dict] = None,
     ) -> dict:
         """Create a new workflow execution record and return its metadata."""
-        execution = WorkflowExecutionModel(
-            workflow_id=workflow_id,
-            tenant_id=tenant_id,
-            status="running",
-            node_states={},
-            variables=variables or {},
-            execution_log=[],
-        )
-        self.db.add(execution)
-        await self.db.flush()
-        return self._to_dict(execution)
+        try:
+            execution = WorkflowExecutionModel(
+                workflow_id=workflow_id,
+                tenant_id=tenant_id,
+                status="running",
+                node_states={},
+                variables=variables or {},
+                execution_log=[],
+            )
+            self.db.add(execution)
+            await self.db.flush()
+            return self._to_dict(execution)
+        except Exception as e:
+            raise ValueError(f"Failed to start execution: {str(e)}")
 
     async def get_execution(self, execution_id: str, tenant_id: str) -> Optional[dict]:
         """Retrieve a single execution by id, scoped to a tenant."""
@@ -241,49 +244,54 @@ class WorkflowVersionService:
         2. Overwrite the workflow's dag_config with the target version's config
         3. Increment the workflow version
         """
-        # Fetch the target version snapshot
-        target = await self.get_version(workflow_id, version)
-        if target is None:
-            raise ValueError(f"Version {version} not found for workflow {workflow_id}")
+        try:
+            # Fetch the target version snapshot
+            target = await self.get_version(workflow_id, version)
+            if target is None:
+                raise ValueError(f"Version {version} not found for workflow {workflow_id}")
 
-        # Fetch the workflow
-        stmt = select(WorkflowModel).where(WorkflowModel.id == workflow_id)
-        result = await self.db.execute(stmt)
-        workflow = result.scalar_one_or_none()
-        if workflow is None:
-            raise ValueError(f"Workflow {workflow_id} not found")
+            # Fetch the workflow
+            stmt = select(WorkflowModel).where(WorkflowModel.id == workflow_id)
+            result = await self.db.execute(stmt)
+            workflow = result.scalar_one_or_none()
+            if workflow is None:
+                raise ValueError(f"Workflow {workflow_id} not found")
 
-        # Snapshot current state before overwriting
-        current_version = workflow.version
-        await self.snapshot_version(
-            workflow_id=workflow_id,
-            version=current_version,
-            dag_config=workflow.dag_config or {},
-            created_by=user_id,
-        )
+            # Snapshot current state before overwriting
+            current_version = workflow.version
+            await self.snapshot_version(
+                workflow_id=workflow_id,
+                version=current_version,
+                dag_config=workflow.dag_config or {},
+                created_by=user_id,
+            )
 
-        # Apply the target version's config
-        new_version = current_version + 1
-        workflow.dag_config = target["dag_config"]
-        workflow.version = new_version
-        workflow.updated_at = datetime.now(timezone.utc)
+            # Apply the target version's config
+            new_version = current_version + 1
+            workflow.dag_config = target["dag_config"]
+            workflow.version = new_version
+            workflow.updated_at = datetime.now(timezone.utc)
 
-        # Snapshot the restored config as the new version
-        await self.snapshot_version(
-            workflow_id=workflow_id,
-            version=new_version,
-            dag_config=target["dag_config"],
-            created_by=user_id,
-        )
+            # Snapshot the restored config as the new version
+            await self.snapshot_version(
+                workflow_id=workflow_id,
+                version=new_version,
+                dag_config=target["dag_config"],
+                created_by=user_id,
+            )
 
-        await self.db.flush()
-        return {
-            "id": workflow.id,
-            "name": workflow.name,
-            "version": new_version,
-            "dag_config": target["dag_config"],
-            "restored_from_version": version,
-        }
+            await self.db.flush()
+            return {
+                "id": workflow.id,
+                "name": workflow.name,
+                "version": new_version,
+                "dag_config": target["dag_config"],
+                "restored_from_version": version,
+            }
+        except ValueError:
+            raise
+        except Exception as e:
+            raise ValueError(f"Failed to rollback workflow: {str(e)}")
 
     @staticmethod
     def _to_dict(wf_version: WorkflowVersionModel) -> dict:
