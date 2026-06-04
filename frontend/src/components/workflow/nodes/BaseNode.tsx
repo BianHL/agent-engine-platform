@@ -166,7 +166,7 @@ export default function BaseNode({ data, selected }: NodeProps) {
       )}
 
       {/* Loop back handle */}
-      {nodeType === 'loop' && (
+      {nodeType === 'iteration' && (
         <Handle
           type="source"
           position={Position.Bottom}
