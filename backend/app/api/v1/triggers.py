@@ -27,22 +27,27 @@ async def create_trigger(
     user: dict = Depends(require_role("admin")),
 ):
     """Create a new trigger."""
-    trigger = TriggerModel(
-        tenant_id=user["tenant_id"],
-        workflow_id=body.workflow_id,
-        name=body.name,
-        trigger_type=body.trigger_type,
-        config=body.config,
-        enabled=True,
-    )
-    db.add(trigger)
-    await db.flush()
+    try:
+        trigger = TriggerModel(
+            tenant_id=user["tenant_id"],
+            workflow_id=body.workflow_id,
+            name=body.name,
+            trigger_type=body.trigger_type,
+            config=body.config,
+            enabled=True,
+        )
+        db.add(trigger)
+        await db.flush()
 
-    # Register with scheduler if enabled
-    scheduler = get_scheduler()
-    scheduler.add_cron_trigger(trigger)
+        # Register with scheduler if enabled
+        scheduler = get_scheduler()
+        scheduler.add_cron_trigger(trigger)
 
-    return _trigger_to_dict(trigger)
+        return _trigger_to_dict(trigger)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create trigger: {str(e)}")
 
 
 @router.get("/")
@@ -53,30 +58,35 @@ async def list_triggers(
     user: dict = Depends(get_current_user),
 ):
     """List triggers for the current tenant."""
-    offset = (page - 1) * size
-    stmt = (
-        select(TriggerModel)
-        .where(TriggerModel.tenant_id == user["tenant_id"])
-        .order_by(TriggerModel.created_at.desc())
-        .offset(offset)
-        .limit(size)
-    )
-    result = await db.execute(stmt)
-    items = result.scalars().all()
+    try:
+        offset = (page - 1) * size
+        stmt = (
+            select(TriggerModel)
+            .where(TriggerModel.tenant_id == user["tenant_id"])
+            .order_by(TriggerModel.created_at.desc())
+            .offset(offset)
+            .limit(size)
+        )
+        result = await db.execute(stmt)
+        items = result.scalars().all()
 
-    count_stmt = (
-        select(func.count())
-        .select_from(TriggerModel)
-        .where(TriggerModel.tenant_id == user["tenant_id"])
-    )
-    total = (await db.execute(count_stmt)).scalar() or 0
+        count_stmt = (
+            select(func.count())
+            .select_from(TriggerModel)
+            .where(TriggerModel.tenant_id == user["tenant_id"])
+        )
+        total = (await db.execute(count_stmt)).scalar() or 0
 
-    return PaginatedResponse(
-        items=[_trigger_to_dict(t) for t in items],
-        total=total,
-        page=page,
-        size=size,
-    )
+        return PaginatedResponse(
+            items=[_trigger_to_dict(t) for t in items],
+            total=total,
+            page=page,
+            size=size,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to list triggers: {str(e)}")
 
 
 @router.put("/{trigger_id}")
@@ -87,21 +97,26 @@ async def update_trigger(
     user: dict = Depends(require_role("admin")),
 ):
     """Update a trigger."""
-    trigger = await _get_trigger(db, trigger_id, user["tenant_id"])
-    trigger.name = body.name
-    trigger.workflow_id = body.workflow_id
-    trigger.trigger_type = body.trigger_type
-    trigger.config = body.config
-    trigger.updated_at = datetime.now(timezone.utc)
-    await db.flush()
+    try:
+        trigger = await _get_trigger(db, trigger_id, user["tenant_id"])
+        trigger.name = body.name
+        trigger.workflow_id = body.workflow_id
+        trigger.trigger_type = body.trigger_type
+        trigger.config = body.config
+        trigger.updated_at = datetime.now(timezone.utc)
+        await db.flush()
 
-    # Re-register with scheduler
-    scheduler = get_scheduler()
-    if trigger.enabled:
-        scheduler.remove_cron_trigger(trigger_id)
-        scheduler.add_cron_trigger(trigger)
+        # Re-register with scheduler
+        scheduler = get_scheduler()
+        if trigger.enabled:
+            scheduler.remove_cron_trigger(trigger_id)
+            scheduler.add_cron_trigger(trigger)
 
-    return _trigger_to_dict(trigger)
+        return _trigger_to_dict(trigger)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update trigger: {str(e)}")
 
 
 @router.delete("/{trigger_id}")
@@ -111,14 +126,19 @@ async def delete_trigger(
     user: dict = Depends(require_role("admin")),
 ):
     """Delete a trigger."""
-    trigger = await _get_trigger(db, trigger_id, user["tenant_id"])
+    try:
+        trigger = await _get_trigger(db, trigger_id, user["tenant_id"])
 
-    # Remove from scheduler
-    scheduler = get_scheduler()
-    scheduler.remove_cron_trigger(trigger_id)
+        # Remove from scheduler
+        scheduler = get_scheduler()
+        scheduler.remove_cron_trigger(trigger_id)
 
-    await db.delete(trigger)
-    return StatusResponse(status="deleted")
+        await db.delete(trigger)
+        return StatusResponse(status="deleted")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete trigger: {str(e)}")
 
 
 @router.post("/{trigger_id}/enable")
@@ -128,15 +148,20 @@ async def enable_trigger(
     user: dict = Depends(require_role("admin")),
 ):
     """Enable a trigger."""
-    trigger = await _get_trigger(db, trigger_id, user["tenant_id"])
-    trigger.enabled = True
-    trigger.updated_at = datetime.now(timezone.utc)
-    await db.flush()
+    try:
+        trigger = await _get_trigger(db, trigger_id, user["tenant_id"])
+        trigger.enabled = True
+        trigger.updated_at = datetime.now(timezone.utc)
+        await db.flush()
 
-    scheduler = get_scheduler()
-    scheduler.add_cron_trigger(trigger)
+        scheduler = get_scheduler()
+        scheduler.add_cron_trigger(trigger)
 
-    return _trigger_to_dict(trigger)
+        return _trigger_to_dict(trigger)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to enable trigger: {str(e)}")
 
 
 @router.post("/{trigger_id}/disable")
@@ -146,15 +171,20 @@ async def disable_trigger(
     user: dict = Depends(require_role("admin")),
 ):
     """Disable a trigger."""
-    trigger = await _get_trigger(db, trigger_id, user["tenant_id"])
-    trigger.enabled = False
-    trigger.updated_at = datetime.now(timezone.utc)
-    await db.flush()
+    try:
+        trigger = await _get_trigger(db, trigger_id, user["tenant_id"])
+        trigger.enabled = False
+        trigger.updated_at = datetime.now(timezone.utc)
+        await db.flush()
 
-    scheduler = get_scheduler()
-    scheduler.remove_cron_trigger(trigger_id)
+        scheduler = get_scheduler()
+        scheduler.remove_cron_trigger(trigger_id)
 
-    return _trigger_to_dict(trigger)
+        return _trigger_to_dict(trigger)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to disable trigger: {str(e)}")
 
 
 @router.post("/{trigger_id}/test")
@@ -164,12 +194,17 @@ async def test_trigger(
     user: dict = Depends(require_role("admin")),
 ):
     """Manually fire a trigger for testing."""
-    trigger = await _get_trigger(db, trigger_id, user["tenant_id"])
+    try:
+        trigger = await _get_trigger(db, trigger_id, user["tenant_id"])
 
-    scheduler = get_scheduler()
-    result = await scheduler.fire_trigger(trigger_id)
+        scheduler = get_scheduler()
+        result = await scheduler.fire_trigger(trigger_id)
 
-    return {"trigger": _trigger_to_dict(trigger), "result": result}
+        return {"trigger": _trigger_to_dict(trigger), "result": result}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to test trigger: {str(e)}")
 
 
 # ---------------------------------------------------------------------------
