@@ -20,20 +20,24 @@ class OrgService:
 
     async def get_tenant_ancestors(self, tenant_id: str) -> List[str]:
         """获取租户的所有上级租户ID列表（从父到根）."""
-        ancestors = []
-        current_id = tenant_id
-        visited = set()
+        try:
+            ancestors = []
+            current_id = tenant_id
+            visited = set()
 
-        while current_id and current_id not in visited:
-            visited.add(current_id)
-            q = select(TenantModel.parent_id).where(TenantModel.id == current_id)
-            result = await self.db.execute(q)
-            parent_id = result.scalar_one_or_none()
-            if parent_id:
-                ancestors.append(parent_id)
-            current_id = parent_id
+            while current_id and current_id not in visited:
+                visited.add(current_id)
+                q = select(TenantModel.parent_id).where(TenantModel.id == current_id)
+                result = await self.db.execute(q)
+                parent_id = result.scalar_one_or_none()
+                if parent_id:
+                    ancestors.append(parent_id)
+                current_id = parent_id
 
-        return ancestors
+            return ancestors
+        except Exception as e:
+            logger.exception("get_tenant_ancestors failed")
+            raise
 
     async def get_tenant_descendants(self, tenant_id: str) -> List[str]:
         """获取租户的所有下级租户ID列表（BFS遍历）."""
@@ -60,15 +64,19 @@ class OrgService:
         """获取可见的租户ID列表.
         scope: "self" | "down" (self+下级) | "up" (self+上级) | "all"
         """
-        visible = [tenant_id]
+        try:
+            visible = [tenant_id]
 
-        if scope in ("down", "all"):
-            visible.extend(await self.get_tenant_descendants(tenant_id))
+            if scope in ("down", "all"):
+                visible.extend(await self.get_tenant_descendants(tenant_id))
 
-        if scope in ("up", "all"):
-            visible.extend(await self.get_tenant_ancestors(tenant_id))
+            if scope in ("up", "all"):
+                visible.extend(await self.get_tenant_ancestors(tenant_id))
 
-        return list(set(visible))
+            return list(set(visible))
+        except Exception as e:
+            logger.exception("get_visible_tenant_ids failed")
+            raise
 
     async def get_org_tree(self, root_tenant_id: str, asset_counts: Dict[str, int] = None) -> dict:
         """构建组织架构树（含资产数量）."""
