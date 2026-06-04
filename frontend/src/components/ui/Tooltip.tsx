@@ -24,27 +24,25 @@ export default function Tooltip({ children, content, position = 'top' }: Tooltip
       onMouseLeave={() => setVisible(false)}
     >
       {children}
-      {visible && (
-        <span
-          style={{
-            position: 'absolute',
-            ...positionStyles[position],
-            padding: '6px 12px',
-            borderRadius: 10,
-            background: 'var(--ae-text)',
-            color: 'var(--ae-bg)',
-            fontSize: 12,
-            whiteSpace: 'nowrap',
-            zIndex: 100,
-            pointerEvents: 'none',
-            opacity: visible ? 1 : 0,
-            transform: visible ? 'translateY(0)' : 'translateY(4px)',
-            transition: 'opacity 200ms ease, transform 200ms ease',
-          }}
-        >
-          {content}
-        </span>
-      )}
+      <span
+        style={{
+          position: 'absolute',
+          ...positionStyles[position],
+          padding: '6px 12px',
+          borderRadius: 10,
+          background: 'var(--ae-text)',
+          color: 'var(--ae-bg)',
+          fontSize: 12,
+          whiteSpace: 'nowrap',
+          zIndex: 100,
+          pointerEvents: 'none',
+          opacity: visible ? 1 : 0,
+          transform: visible ? 'translateY(0)' : 'translateY(4px)',
+          transition: 'opacity 200ms ease, transform 200ms ease',
+        }}
+      >
+        {content}
+      </span>
     </span>
   );
 }

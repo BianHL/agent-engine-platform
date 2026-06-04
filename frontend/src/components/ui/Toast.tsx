@@ -18,7 +18,7 @@ export function showToast(message: string, type: 'success' | 'error' | 'warning'
   const id = Date.now().toString();
   toasts.push({ id, message, type });
   notify();
-  const dismissMs = type === 'error' ? 8000 : 4000;
+  const dismissMs = type === 'error' ? 5000 : 3000;
   setTimeout(() => {
     toasts = toasts.filter(t => t.id !== id);
     notify();
@@ -72,7 +72,7 @@ function ToastItem({ toast }: { toast: Toast }) {
       style={{
         pointerEvents: 'auto',
         padding: '14px 18px',
-        borderRadius: 'var(--ae-radius-lg)',
+        borderRadius: 'var(--ae-radius-md)',
         border: '1px solid var(--ae-line)',
         background: 'var(--ae-panel-strong)',
         boxShadow: 'var(--ae-shadow)',

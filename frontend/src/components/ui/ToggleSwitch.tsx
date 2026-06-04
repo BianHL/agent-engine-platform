@@ -9,6 +9,13 @@ interface ToggleSwitchProps {
 }
 
 export default function ToggleSwitch({ checked, onChange, label, className = '' }: ToggleSwitchProps) {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      onChange(!checked);
+    }
+  };
+
   return (
     <label
       className={className}
@@ -20,7 +27,11 @@ export default function ToggleSwitch({ checked, onChange, label, className = '' 
       }}
     >
       <div
+        role="switch"
+        aria-checked={checked}
+        tabIndex={0}
         onClick={() => onChange(!checked)}
+        onKeyDown={handleKeyDown}
         style={{
           width: 44,
           height: 24,
@@ -30,6 +41,7 @@ export default function ToggleSwitch({ checked, onChange, label, className = '' 
           cursor: 'pointer',
           transition: 'background 200ms ease',
           flexShrink: 0,
+          outline: 'none',
         }}
       >
         <div
