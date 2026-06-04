@@ -148,10 +148,6 @@ export default function AgentsPage() {
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => router.push('/agents/create')}
-            style={{
-              background: 'var(--ae-accent-gold)',
-              borderColor: 'var(--ae-accent-gold)',
-            }}
           >
             Create Agent
           </Button>
@@ -172,7 +168,7 @@ export default function AgentsPage() {
           onChange={(e) => setSearchQuery(e.target.value)}
           style={{
             maxWidth: 480,
-            borderRadius: 6,
+            borderRadius: 14,
             background: 'var(--ae-panel-strong)',
           }}
           allowClear
@@ -232,10 +228,6 @@ export default function AgentsPage() {
                   type="primary"
                   icon={<PlusOutlined />}
                   onClick={() => router.push('/agents/create')}
-                  style={{
-                    background: 'var(--ae-accent-gold)',
-                    borderColor: 'var(--ae-accent-gold)',
-                  }}
                 >
                   Create Agent
                 </Button>
@@ -281,7 +273,7 @@ function AgentGrid({ agents, onDelete }: { agents: Agent[]; onDelete: (id: strin
             style={{
               background: 'var(--ae-panel-strong)',
               border: '1px solid var(--ae-line)',
-              borderRadius: 8,
+              borderRadius: 22,
               transition: 'box-shadow 150ms cubic-bezier(0.25, 1, 0.5, 1)',
             }}
             bodyStyle={{ padding: 20 }}
@@ -376,7 +368,7 @@ function AgentGrid({ agents, onDelete }: { agents: Agent[]; onDelete: (id: strin
               <Tag
                 style={{
                   margin: 0,
-                  borderRadius: 4,
+                  borderRadius: 'var(--ae-radius-full)',
                   fontSize: 12,
                   fontWeight: 500,
                   border: 'none',
@@ -393,7 +385,7 @@ function AgentGrid({ agents, onDelete }: { agents: Agent[]; onDelete: (id: strin
               <Tag
                 style={{
                   margin: 0,
-                  borderRadius: 4,
+                  borderRadius: 'var(--ae-radius-full)',
                   fontSize: 12,
                   fontWeight: 500,
                   border: 'none',
