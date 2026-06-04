@@ -29,17 +29,25 @@ class DebugMode(str, Enum):
 
 
 class NodeType(str, Enum):
+    START = "start"
+    END = "end"
     LLM = "llm"
-    CONDITION = "condition"
-    PARALLEL = "parallel"
-    LOOP = "loop"
-    HTTP = "http"
-    CODE = "code"
-    HUMAN = "human"
-    SUB_WORKFLOW = "sub_workflow"
-    TEMPLATE = "template"
+    KNOWLEDGE = "knowledge"
     QUESTION_CLASSIFIER = "question_classifier"
     PARAMETER_EXTRACTOR = "parameter_extractor"
+    CODE = "code"
+    TEMPLATE = "template"
+    VARIABLE = "variable"
+    CONDITION = "condition"
+    PARALLEL = "parallel"
+    ITERATION = "iteration"
+    HTTP = "http"
+    TOOL = "tool"
+    HUMAN = "human"
+    SUB_WORKFLOW = "sub_workflow"
+    ANSWER = "answer"
+    # Legacy aliases
+    LOOP = "loop"
     VARIABLE_AGGREGATOR = "variable_aggregator"
     VARIABLE_ASSIGNER = "variable_assigner"
 
@@ -264,16 +272,25 @@ class WorkflowState:
 class WorkflowEngine:
     def __init__(self):
         self._node_executors: dict[NodeType, Callable] = {
+            NodeType.START: self._execute_start,
+            NodeType.END: self._execute_end,
             NodeType.LLM: self._execute_llm,
+            NodeType.KNOWLEDGE: self._execute_knowledge,
+            NodeType.QUESTION_CLASSIFIER: self._execute_question_classifier,
+            NodeType.PARAMETER_EXTRACTOR: self._execute_parameter_extractor,
+            NodeType.CODE: self._execute_code,
+            NodeType.TEMPLATE: self._execute_template,
+            NodeType.VARIABLE: self._execute_variable,
             NodeType.CONDITION: self._execute_condition,
             NodeType.PARALLEL: self._execute_parallel,
-            NodeType.LOOP: self._execute_loop,
+            NodeType.ITERATION: self._execute_loop,
             NodeType.HTTP: self._execute_http,
-            NodeType.CODE: self._execute_code,
+            NodeType.TOOL: self._execute_tool,
             NodeType.HUMAN: self._execute_human,
             NodeType.SUB_WORKFLOW: self._execute_sub_workflow,
-            NodeType.TEMPLATE: self._execute_template,
-            NodeType.QUESTION_CLASSIFIER: self._execute_question_classifier,
+            NodeType.ANSWER: self._execute_answer,
+            # Legacy aliases
+            NodeType.LOOP: self._execute_loop,
             NodeType.PARAMETER_EXTRACTOR: self._execute_parameter_extractor,
             NodeType.VARIABLE_AGGREGATOR: self._execute_variable_aggregator,
             NodeType.VARIABLE_ASSIGNER: self._execute_variable_assigner,
@@ -1171,6 +1188,113 @@ class WorkflowEngine:
                 raise ValueError(f"Unknown operation: {operation}")
 
         return {"assigned": assigned}
+
+    async def _execute_start(self, node: WorkflowNode, state: WorkflowState) -> Any:
+        """Start node — pass through input variables."""
+        return {"status": "started", "variables": dict(state.variables)}
+
+    async def _execute_end(self, node: WorkflowNode, state: WorkflowState) -> Any:
+        """End node — collect output variables."""
+        config = node.config
+        output_vars = config.get("output_variables", [])
+        if isinstance(output_vars, str):
+            try:
+                output_vars = json.loads(output_vars)
+            except (json.JSONDecodeError, TypeError):
+                output_vars = []
+        result = {}
+        if isinstance(output_vars, list):
+            for var_def in output_vars:
+                name = var_def.get("name", "") if isinstance(var_def, dict) else str(var_def)
+                if name:
+                    result[name] = state.get_var(name)
+        else:
+            result = dict(state.variables)
+        return {"output": result}
+
+    async def _execute_knowledge(self, node: WorkflowNode, state: WorkflowState) -> Any:
+        """Knowledge/RAG retrieval node."""
+        config = node.config
+        kb_ids = config.get("knowledge_base_ids", [])
+        query_var = config.get("query_variable", "{{input}}")
+        top_k = config.get("top_k", 5)
+        score_threshold = config.get("score_threshold", 0.5)
+
+        query = self._resolve_variable(query_var, state)
+        if not query:
+            return {"documents": [], "query": ""}
+
+        try:
+            from app.engines.knowledge_engine.retriever.retriever import HybridRetriever
+            retriever = HybridRetriever()
+            results = []
+            for kb_id in kb_ids:
+                retrieved = await retriever.retrieve(
+                    kb_id=kb_id, query=str(query), top_k=top_k
+                )
+                for r in retrieved:
+                    if r.get("score", 0) >= score_threshold:
+                        results.append(r)
+            return {"documents": results, "query": str(query)}
+        except Exception as e:
+            logger.warning(f"Knowledge retrieval failed: {e}")
+            return {"documents": [], "query": str(query), "error": str(e)}
+
+    async def _execute_tool(self, node: WorkflowNode, state: WorkflowState) -> Any:
+        """Tool execution node."""
+        config = node.config
+        tool_name = config.get("tool_name", "")
+        tool_params = config.get("tool_params", {})
+        if isinstance(tool_params, str):
+            try:
+                tool_params = json.loads(tool_params)
+            except (json.JSONDecodeError, TypeError):
+                tool_params = {}
+        resolved_params = {}
+        for k, v in tool_params.items():
+            resolved_params[k] = self._resolve_variable(v, state) if isinstance(v, str) and "{{" in v else v
+        try:
+            from app.engines.tool_engine.executor import ToolExecutor
+            executor = ToolExecutor()
+            result = await executor.execute(tool_name, resolved_params)
+            return {"result": result, "tool": tool_name}
+        except Exception as e:
+            return {"error": str(e), "tool": tool_name}
+
+    async def _execute_answer(self, node: WorkflowNode, state: WorkflowState) -> Any:
+        """Answer node for chatflow — formats the response."""
+        config = node.config
+        template = config.get("answer_template", "{{output}}")
+        answer = self._resolve_variable(template, state)
+        return {"answer": answer}
+
+    async def _execute_variable(self, node: WorkflowNode, state: WorkflowState) -> Any:
+        """Variable assignment/transformation node."""
+        config = node.config
+        operations = config.get("operations", [])
+        if isinstance(operations, str):
+            try:
+                operations = json.loads(operations)
+            except (json.JSONDecodeError, TypeError):
+                operations = []
+        results = {}
+        for op in operations:
+            var_name = op.get("variable", "")
+            operator = op.get("operator", "assign")
+            value = op.get("value", "")
+            resolved_value = self._resolve_variable(value, state) if isinstance(value, str) and "{{" in value else value
+            if operator == "assign":
+                state.set_var(var_name, resolved_value)
+            elif operator == "add":
+                current = state.get_var(var_name) or 0
+                state.set_var(var_name, current + resolved_value)
+            elif operator == "append":
+                current = state.get_var(var_name) or []
+                if isinstance(current, list):
+                    current.append(resolved_value)
+                    state.set_var(var_name, current)
+            results[var_name] = state.get_var(var_name)
+        return {"variables": results}
 
 
 def _cleanup_stale_approval_entries() -> None:
