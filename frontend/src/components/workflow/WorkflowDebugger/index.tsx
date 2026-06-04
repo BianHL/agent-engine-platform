@@ -134,16 +134,16 @@ export default function WorkflowDebugger({
             <Descriptions.Item label="Status"><Tag color={getStatusColor(nodeExecutionStatus[selectedNodeId].status)}>{nodeExecutionStatus[selectedNodeId].status}</Tag></Descriptions.Item>
             {nodeExecutionStatus[selectedNodeId].started_at && <Descriptions.Item label="Started">{nodeExecutionStatus[selectedNodeId].started_at}</Descriptions.Item>}
             {nodeExecutionStatus[selectedNodeId].completed_at && <Descriptions.Item label="Completed">{nodeExecutionStatus[selectedNodeId].completed_at}</Descriptions.Item>}
-            {nodeExecutionStatus[selectedNodeId].error && <Descriptions.Item label="Error"><Text type="danger">{nodeExecutionStatus[selectedNodeId].error}</Text></Descriptions.Item>}
+            {nodeExecutionStatus[selectedNodeId].error ? <Descriptions.Item label="Error"><Text type="danger">{String(nodeExecutionStatus[selectedNodeId].error)}</Text></Descriptions.Item> : null}
           </Descriptions>
-          {nodeExecutionStatus[selectedNodeId].result && (
+          {nodeExecutionStatus[selectedNodeId].result ? (
             <div style={{ marginTop: 8 }}>
               <Text strong style={{ fontSize: '12px' }}>Output:</Text>
               <Paragraph code style={{ fontSize: '11px', maxHeight: 150, overflow: 'auto', marginTop: 4 }}>
                 {JSON.stringify(nodeExecutionStatus[selectedNodeId].result, null, 2)}
               </Paragraph>
             </div>
-          )}
+          ) : null}
         </Card>
       )}
     </Card>
