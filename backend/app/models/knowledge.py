@@ -1,7 +1,7 @@
 """Knowledge Base and Document models."""
 from datetime import UTC, datetime
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, Float, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Integer, JSON, Numeric, String, Text
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base, EnterpriseMixin, OptimisticLockMixin, generate_uuid
@@ -25,7 +25,7 @@ class KnowledgeBaseModel(Base, EnterpriseMixin, OptimisticLockMixin):
     chunking_strategy = Column(String(20), default="recursive")
     retrieval_mode = Column(String(20), default="hybrid")
     retrieval_top_k = Column(Integer, default=5)
-    score_threshold = Column(Float, default=0.5)
+    score_threshold = Column(Numeric(3, 2), default=0.5)
     rerank_enabled = Column(Boolean, default=False)
     rerank_model = Column(String(100), nullable=True)
     document_count = Column(Integer, default=0)
