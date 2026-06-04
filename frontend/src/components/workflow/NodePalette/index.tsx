@@ -20,16 +20,24 @@ export default function NodePalette() {
 
   const nodeCategories = [
     {
-      title: 'AI & Logic',
-      types: ['llm', 'condition', 'code'],
+      title: '▶️ Flow Control',
+      types: ['start', 'end', 'condition', 'parallel', 'iteration'],
     },
     {
-      title: 'Control Flow',
-      types: ['parallel', 'loop'],
+      title: '🤖 AI / LLM',
+      types: ['llm', 'knowledge', 'question_classifier', 'parameter_extractor'],
     },
     {
-      title: 'Integrations',
-      types: ['http', 'human', 'sub_workflow'],
+      title: '📦 Data & Transform',
+      types: ['code', 'template', 'variable'],
+    },
+    {
+      title: '🔗 Integrations',
+      types: ['http', 'tool', 'human', 'sub_workflow'],
+    },
+    {
+      title: '💬 Chatflow',
+      types: ['answer'],
     },
   ];
 
