@@ -1,7 +1,7 @@
 """User and Authentication models."""
 from datetime import UTC, datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, String
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base, EnterpriseMixin, generate_uuid
@@ -20,7 +20,7 @@ class UserModel(Base, EnterpriseMixin):
     nickname = Column(String(100), nullable=True)
     avatar_url = Column(String(500), nullable=True)
     role = Column(String(20), default="user")
-    department_id = Column(String(36), index=True)
+    department_id = Column(String(36), ForeignKey("departments.id"), index=True)
     position = Column(String(100), nullable=True)
     status = Column(String(20), default="active")
     last_login_at = Column(DateTime, nullable=True)
@@ -38,6 +38,11 @@ class UserModel(Base, EnterpriseMixin):
     api_tokens = relationship("ApiTokenModel", back_populates="user", cascade="all, delete-orphan")
     operation_logs = relationship("OperationLogModel", back_populates="actor", foreign_keys="OperationLogModel.user_id")
     marketplace_items = relationship("MarketplaceItem", back_populates="creator", foreign_keys="MarketplaceItem.creator_id")
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "username", name="uk_users_tenant_username"),
+        UniqueConstraint("tenant_id", "email", name="uk_users_tenant_email"),
+    )
 
 
 class ApiTokenModel(Base):
@@ -71,9 +76,13 @@ class UserRoleModel(Base):
     id = Column(String(36), primary_key=True, default=generate_uuid)
     user_id = Column(String(36), ForeignKey("users.id"), index=True, nullable=False)
     role_id = Column(String(36), ForeignKey("roles.id"), index=True, nullable=False)
-    tenant_id = Column(String(36), index=True, nullable=False)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), index=True, nullable=False)
     created_by = Column(String(36), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "role_id", name="uk_user_role"),
+    )
 
 
 class UserSessionModel(Base):
@@ -81,8 +90,8 @@ class UserSessionModel(Base):
     __tablename__ = "user_sessions"
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    user_id = Column(String(36), index=True, nullable=False)
-    tenant_id = Column(String(36), nullable=False)
+    user_id = Column(String(36), ForeignKey("users.id"), index=True, nullable=False)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), nullable=False)
     session_token = Column(String(500), nullable=False)
     refresh_token = Column(String(500), nullable=True)
     device_type = Column(String(30), nullable=True)

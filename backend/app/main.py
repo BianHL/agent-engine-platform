@@ -1,7 +1,11 @@
 import json
+import logging
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+
+logger = logging.getLogger(__name__)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 
@@ -13,7 +17,28 @@ from app.core.metrics_middleware import MetricsMiddleware
 
 setup_logging()
 
-app = FastAPI(title="Agent Engine Platform", version="1.0.0", docs_url="/docs")
+
+@asynccontextmanager
+async def lifespan(app_instance):
+    """Application lifespan: startup and shutdown logic."""
+    # --- Startup ---
+    from app.engines.tool_engine.registry import register_builtin_tools
+    register_builtin_tools()
+
+    from app.core.scheduler import get_scheduler
+    scheduler = get_scheduler()
+    await scheduler.start()
+
+    yield
+
+    # --- Shutdown ---
+    await scheduler.stop()
+
+    from app.core.redis import close_redis
+    await close_redis()
+
+
+app = FastAPI(title="Agent Engine Platform", version="1.0.0", docs_url="/docs", lifespan=lifespan)
 
 # SEC-009: HTTPS redirect middleware
 FORCE_HTTPS = os.environ.get("FORCE_HTTPS", "false").lower() == "true"
@@ -37,8 +62,7 @@ def _parse_cors_origins() -> list[str]:
         if isinstance(origins, list):
             return origins
     except (json.JSONDecodeError, TypeError):
-        pass
-    # 逗号分隔
+        pass  # Fall through to comma-separated parsing
     return [origin.strip() for origin in raw.split(",") if origin.strip()]
 
 
@@ -69,7 +93,7 @@ try:
             media_type=CONTENT_TYPE_LATEST,
         )
 except ImportError:
-    pass
+    pass  # prometheus_client not installed, /metrics endpoint unavailable
 
 # Global exception handlers
 from app.core.exceptions import (
@@ -94,30 +118,6 @@ async def not_found_handler(request: Request, exc: ModelNotFoundError):
 @app.exception_handler(RateLimitExceededError)
 async def rate_limit_handler(request: Request, exc: RateLimitExceededError):
     return JSONResponse(status_code=429, content={"detail": str(exc)})
-
-
-@app.on_event("startup")
-async def startup_tasks():
-    """Register built-in tools on application startup."""
-    from app.engines.tool_engine.registry import register_builtin_tools
-    register_builtin_tools()
-
-    # Start scheduler service
-    from app.core.scheduler import get_scheduler
-    scheduler = get_scheduler()
-    await scheduler.start()
-
-
-@app.on_event("shutdown")
-async def shutdown_tasks():
-    """Clean up resources on shutdown."""
-    from app.core.scheduler import get_scheduler
-    scheduler = get_scheduler()
-    await scheduler.stop()
-
-    # FW-H06: close shared Redis connection on shutdown
-    from app.core.redis import close_redis
-    await close_redis()
 
 
 @app.get("/health")
@@ -146,17 +146,14 @@ async def health():
 
     async def check_milvus():
         try:
-            from pymilvus import connections, utility
+            from pymilvus import MilvusClient
             from app.config import settings
-            connections.connect(
-                alias="health_check",
-                host=settings.MILVUS_HOST,
-                port=settings.MILVUS_PORT,
+            client = MilvusClient(
+                uri=f"http://{settings.MILVUS_HOST}:{settings.MILVUS_PORT}",
+                timeout=5,
             )
-            if connections.has_connection("health_check"):
-                connections.disconnect("health_check")
-                return "milvus", "ok"
-            return "milvus", "error: connection failed"
+            client.close()
+            return "milvus", "ok"
         except Exception as e:
             return "milvus", f"error: {str(e)[:100]}"
 

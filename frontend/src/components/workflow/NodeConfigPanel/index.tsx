@@ -88,19 +88,50 @@ export default function NodeConfigPanel({
                   { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
                   { value: 'claude-3-opus', label: 'Claude 3 Opus' },
                   { value: 'claude-3-sonnet', label: 'Claude 3 Sonnet' },
+                  { value: 'deepseek-chat', label: 'DeepSeek V3' },
+                  { value: 'qwen-72b', label: 'Qwen 72B' },
                 ]}
               />
             </Form.Item>
 
             <Form.Item
-              name="prompt"
+              name="system_prompt"
               label="System Prompt"
-              rules={[{ required: true, message: 'Please enter a prompt' }]}
+              rules={[{ required: true, message: 'Please enter a system prompt' }]}
             >
               <Input.TextArea
-                rows={6}
-                placeholder="Enter system prompt. Use {{variable}} for dynamic values."
+                rows={4}
+                placeholder="You are a helpful assistant. Use {{variable}} for dynamic values."
                 style={{ fontFamily: 'monospace' }}
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="user_prompt"
+              label="User Prompt"
+              extra="The user message template. Use {{variable}} for dynamic values."
+            >
+              <Input.TextArea
+                rows={4}
+                placeholder="{{input}}"
+                style={{ fontFamily: 'monospace' }}
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="context_variable"
+              label="Context Variable"
+              extra="Variable containing retrieved context (e.g., from Knowledge node)"
+            >
+              <Input placeholder="{{knowledge.documents}}" />
+            </Form.Item>
+
+            <Form.Item name="memory_enabled" label="Enable Memory" valuePropName="checked">
+              <Select
+                options={[
+                  { value: true, label: 'Yes - Remember conversation history' },
+                  { value: false, label: 'No - Stateless' },
+                ]}
               />
             </Form.Item>
 
@@ -165,31 +196,23 @@ export default function NodeConfigPanel({
         return (
           <>
             <Form.Item
-              name="expression"
-              label="Condition Expression"
-              rules={[{ required: true, message: 'Enter condition' }]}
-              extra="Example: score > 0.8, status == 'approved'"
+              name="conditions"
+              label="Conditions"
+              extra="JSON array of IF/ELSE IF conditions. Each needs: variable, operator, value, label"
+              rules={[{ required: true }]}
             >
               <Input.TextArea
-                rows={3}
-                placeholder="Enter expression that evaluates to true/false"
+                rows={6}
+                placeholder={'[\n  {"variable": "{{score}}", "operator": ">", "value": "0.8", "label": "High Score"},\n  {"variable": "{{score}}", "operator": ">", "value": "0.5", "label": "Medium Score"}\n]'}
+                style={{ fontFamily: 'monospace' }}
               />
             </Form.Item>
-
             <Form.Item
-              name="true_label"
-              label="True Branch Label"
-              extra="Label for the output handle when condition is true"
+              name="else_label"
+              label="ELSE Branch Label"
+              extra="Label for the default branch when no conditions match"
             >
-              <Input placeholder="Yes" />
-            </Form.Item>
-
-            <Form.Item
-              name="false_label"
-              label="False Branch Label"
-              extra="Label for the output handle when condition is false"
-            >
-              <Input placeholder="No" />
+              <Input placeholder="ELSE" />
             </Form.Item>
           </>
         );
@@ -231,7 +254,7 @@ export default function NodeConfigPanel({
           </>
         );
 
-      case 'loop':
+      case 'iteration':
         return (
           <>
             <Form.Item
@@ -399,6 +422,224 @@ export default function NodeConfigPanel({
                   { value: true, label: 'Yes - Pass entire context' },
                   { value: false, label: 'No - Pass only mapped values' },
                 ]}
+              />
+            </Form.Item>
+          </>
+        );
+
+      case 'start':
+        return (
+          <>
+            <Form.Item
+              name="input_variables"
+              label="Input Variables"
+              extra="Define variables that this workflow accepts as input"
+            >
+              <Input.TextArea
+                rows={4}
+                placeholder={'[\n  {"name": "query", "type": "string", "required": true},\n  {"name": "options", "type": "object", "required": false}\n]'}
+                style={{ fontFamily: 'monospace' }}
+              />
+            </Form.Item>
+          </>
+        );
+
+      case 'end':
+        return (
+          <>
+            <Form.Item
+              name="output_variables"
+              label="Output Variables"
+              extra="Define what this workflow returns"
+            >
+              <Input.TextArea
+                rows={4}
+                placeholder={'[\n  {"name": "result", "type": "string"},\n  {"name": "score", "type": "number"}\n]'}
+                style={{ fontFamily: 'monospace' }}
+              />
+            </Form.Item>
+          </>
+        );
+
+      case 'knowledge':
+        return (
+          <>
+            <Form.Item
+              name="knowledge_base_ids"
+              label="Knowledge Bases"
+              rules={[{ required: true }]}
+            >
+              <Select
+                mode="multiple"
+                placeholder="Select knowledge bases"
+                options={[]}
+              />
+            </Form.Item>
+            <Form.Item
+              name="query_variable"
+              label="Query Variable"
+              rules={[{ required: true }]}
+              extra="Variable containing the search query"
+            >
+              <Input placeholder="{{input.query}}" />
+            </Form.Item>
+            <Form.Item name="top_k" label="Top K Results">
+              <InputNumber min={1} max={20} style={{ width: '100%' }} />
+            </Form.Item>
+            <Form.Item name="score_threshold" label="Score Threshold">
+              <InputNumber min={0} max={1} step={0.05} style={{ width: '100%' }} />
+            </Form.Item>
+            <Form.Item name="retrieval_mode" label="Retrieval Mode">
+              <Select
+                options={[
+                  { value: 'vector', label: 'Vector Search' },
+                  { value: 'full_text', label: 'Full Text Search' },
+                  { value: 'hybrid', label: 'Hybrid (Recommended)' },
+                ]}
+              />
+            </Form.Item>
+          </>
+        );
+
+      case 'question_classifier':
+        return (
+          <>
+            <Form.Item
+              name="input_variable"
+              label="Input Variable"
+              rules={[{ required: true }]}
+            >
+              <Input placeholder="{{input}}" />
+            </Form.Item>
+            <Form.Item name="model" label="Model">
+              <Select
+                options={[
+                  { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
+                  { value: 'gpt-4o', label: 'GPT-4o' },
+                ]}
+              />
+            </Form.Item>
+            <Form.Item
+              name="classes"
+              label="Classification Classes"
+              extra="JSON array of classes with name and description"
+            >
+              <Input.TextArea
+                rows={4}
+                placeholder={'[\n  {"name": "Complaint", "description": "Customer complaints"},\n  {"name": "Inquiry", "description": "General questions"}\n]'}
+                style={{ fontFamily: 'monospace' }}
+              />
+            </Form.Item>
+          </>
+        );
+
+      case 'parameter_extractor':
+        return (
+          <>
+            <Form.Item
+              name="input_variable"
+              label="Input Variable"
+              rules={[{ required: true }]}
+            >
+              <Input placeholder="{{input}}" />
+            </Form.Item>
+            <Form.Item name="model" label="Model">
+              <Select
+                options={[
+                  { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
+                  { value: 'gpt-4o', label: 'GPT-4o' },
+                ]}
+              />
+            </Form.Item>
+            <Form.Item
+              name="parameters"
+              label="Parameters to Extract"
+              extra="JSON array of parameter definitions"
+            >
+              <Input.TextArea
+                rows={4}
+                placeholder={'[\n  {"name": "name", "type": "string", "required": true},\n  {"name": "date", "type": "string", "required": false}\n]'}
+                style={{ fontFamily: 'monospace' }}
+              />
+            </Form.Item>
+          </>
+        );
+
+      case 'template':
+        return (
+          <>
+            <Form.Item
+              name="template"
+              label="Template"
+              rules={[{ required: true }]}
+              extra="Use {{variable}} for dynamic values"
+            >
+              <Input.TextArea
+                rows={6}
+                placeholder="Hello {{name}},\n\nYour order #{{order_id}} is ready."
+                style={{ fontFamily: 'monospace' }}
+              />
+            </Form.Item>
+          </>
+        );
+
+      case 'variable':
+        return (
+          <>
+            <Form.Item
+              name="operations"
+              label="Variable Operations"
+              extra="JSON array of variable assignments"
+            >
+              <Input.TextArea
+                rows={4}
+                placeholder={'[\n  {"variable": "output", "operator": "assign", "value": "{{input}}"},\n  {"variable": "count", "operator": "add", "value": "1"}\n]'}
+                style={{ fontFamily: 'monospace' }}
+              />
+            </Form.Item>
+          </>
+        );
+
+      case 'tool':
+        return (
+          <>
+            <Form.Item
+              name="tool_name"
+              label="Tool"
+              rules={[{ required: true }]}
+            >
+              <Select
+                placeholder="Select a tool"
+                options={[]}
+              />
+            </Form.Item>
+            <Form.Item
+              name="tool_params"
+              label="Tool Parameters"
+              extra="JSON object with tool parameters"
+            >
+              <Input.TextArea
+                rows={4}
+                placeholder='{"query": "{{input}}"}'
+                style={{ fontFamily: 'monospace' }}
+              />
+            </Form.Item>
+          </>
+        );
+
+      case 'answer':
+        return (
+          <>
+            <Form.Item
+              name="answer_template"
+              label="Answer Template"
+              rules={[{ required: true }]}
+              extra="Use {{variable}} to include dynamic content"
+            >
+              <Input.TextArea
+                rows={6}
+                placeholder="{{llm_response}}"
+                style={{ fontFamily: 'monospace' }}
               />
             </Form.Item>
           </>

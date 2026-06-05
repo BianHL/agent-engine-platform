@@ -26,6 +26,20 @@
   --ae-danger: #c47a6e;
   --ae-overlay: rgba(0, 0, 0, 0.35);
 
+  /* Gradients */
+  --ae-gradient-primary: linear-gradient(135deg, #b8956a, #a08060 52%, #8b9a6d);
+  --ae-gradient-card: linear-gradient(180deg, rgba(255,255,255,0.82), rgba(252,250,247,0.66));
+
+  /* Semantic Backgrounds (for badges, toasts, status) */
+  --ae-bg-success: rgba(111, 155, 124, 0.12);
+  --ae-bg-warning: rgba(208, 164, 93, 0.12);
+  --ae-bg-danger: rgba(196, 122, 110, 0.12);
+  --ae-bg-info: rgba(122, 138, 106, 0.12);
+
+  /* Button Shadows */
+  --ae-shadow-button: 0 14px 28px rgba(168, 149, 106, 0.18);
+  --ae-shadow-button-danger: 0 10px 20px rgba(196, 122, 110, 0.15);
+
   /* Radius */
   --ae-radius-sm: 12px;
   --ae-radius-md: 16px;
@@ -384,4 +398,8 @@ h3 {
 
 [data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
   background: rgba(160, 150, 138, 0.40);
+}
+
+@keyframes ae-spin {
+  to { transform: rotate(360deg); }
 }

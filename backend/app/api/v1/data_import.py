@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user
+from app.core.rbac import require_permission
 from app.core.database import get_db
 from app.engines.import_engine.importer import import_engine
 from app.engines.import_engine.base_importer import ImportAssetType
@@ -73,7 +74,7 @@ async def list_platforms():
 @router.post("/validate")
 async def validate_config(
     request: ImportConfig,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(require_permission("data_import", "create"))
 ):
     """验证导入配置"""
     try:
@@ -94,7 +95,7 @@ async def validate_config(
 @router.post("/assets")
 async def list_assets(
     request: ListAssetsRequest,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(require_permission("data_import", "create"))
 ):
     """列出可导入的资产"""
     try:
@@ -116,7 +117,7 @@ async def list_assets(
 @router.post("/execute")
 async def execute_import(
     request: ImportRequest,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(require_permission("data_import", "create"))
 ):
     """执行批量导入"""
     try:
@@ -152,7 +153,7 @@ async def execute_import(
 @router.post("/single")
 async def import_single(
     request: SingleImportRequest,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(require_permission("data_import", "create"))
 ):
     """导入单个资产"""
     try:
@@ -227,7 +228,7 @@ async def upload_import_file(
     platform: str = Form(...),
     asset_type: str = Form(...),
     file: UploadFile = File(...),
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(require_permission("data_import", "create"))
 ):
     """上传文件导入"""
     try:

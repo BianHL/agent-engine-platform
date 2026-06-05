@@ -22,6 +22,7 @@ export default function AgentsPage() {
   const router = useRouter();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -31,9 +32,11 @@ export default function AgentsPage() {
 
   const loadAgents = async () => {
     try {
+      setError(null);
       const data = await api.listAgents();
       setAgents(data.items || []);
     } catch {
+      setError('Failed to load agents');
       message.error('Failed to load agents');
     } finally {
       setLoading(false);
@@ -88,6 +91,22 @@ export default function AgentsPage() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <ExclamationCircleOutlined style={{ fontSize: 48, color: 'var(--ae-danger)', marginBottom: 16 }} />
+        <Text style={{ fontSize: 16, fontWeight: 600, color: 'var(--ae-text)', marginBottom: 8 }}>
+          {error}
+        </Text>
+        <Button
+          onClick={() => { setLoading(true); loadAgents(); }}
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div>
       {/* Page Header */}
@@ -129,10 +148,6 @@ export default function AgentsPage() {
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => router.push('/agents/create')}
-            style={{
-              background: 'var(--ae-accent-gold)',
-              borderColor: 'var(--ae-accent-gold)',
-            }}
           >
             Create Agent
           </Button>
@@ -153,7 +168,7 @@ export default function AgentsPage() {
           onChange={(e) => setSearchQuery(e.target.value)}
           style={{
             maxWidth: 480,
-            borderRadius: 6,
+            borderRadius: 14,
             background: 'var(--ae-panel-strong)',
           }}
           allowClear
@@ -213,10 +228,6 @@ export default function AgentsPage() {
                   type="primary"
                   icon={<PlusOutlined />}
                   onClick={() => router.push('/agents/create')}
-                  style={{
-                    background: 'var(--ae-accent-gold)',
-                    borderColor: 'var(--ae-accent-gold)',
-                  }}
                 >
                   Create Agent
                 </Button>
@@ -262,7 +273,7 @@ function AgentGrid({ agents, onDelete }: { agents: Agent[]; onDelete: (id: strin
             style={{
               background: 'var(--ae-panel-strong)',
               border: '1px solid var(--ae-line)',
-              borderRadius: 8,
+              borderRadius: 22,
               transition: 'box-shadow 150ms cubic-bezier(0.25, 1, 0.5, 1)',
             }}
             bodyStyle={{ padding: 20 }}
@@ -357,7 +368,7 @@ function AgentGrid({ agents, onDelete }: { agents: Agent[]; onDelete: (id: strin
               <Tag
                 style={{
                   margin: 0,
-                  borderRadius: 4,
+                  borderRadius: 'var(--ae-radius-full)',
                   fontSize: 12,
                   fontWeight: 500,
                   border: 'none',
@@ -374,7 +385,7 @@ function AgentGrid({ agents, onDelete }: { agents: Agent[]; onDelete: (id: strin
               <Tag
                 style={{
                   margin: 0,
-                  borderRadius: 4,
+                  borderRadius: 'var(--ae-radius-full)',
                   fontSize: 12,
                   fontWeight: 500,
                   border: 'none',

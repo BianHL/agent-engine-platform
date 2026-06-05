@@ -21,8 +21,13 @@ async def create_agent(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_permission("agent", "create"))):
     """Create a new agent."""
-    svc = AgentService(db)
-    return await svc.create(tenant_id=user["tenant_id"], data=body.model_dump())
+    try:
+        svc = AgentService(db)
+        return await svc.create(tenant_id=user["tenant_id"], data=body.model_dump())
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create agent: {str(e)}")
 
 
 @router.get("/{agent_id}")
@@ -45,8 +50,13 @@ async def list_agents(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(get_current_user)):
     """List agents for the current tenant."""
-    svc = AgentService(db)
-    return await svc.list(tenant_id=user["tenant_id"], page=page, size=size)
+    try:
+        svc = AgentService(db)
+        return await svc.list(tenant_id=user["tenant_id"], page=page, size=size)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to list agents: {str(e)}")
 
 
 @router.put("/{agent_id}")
@@ -56,11 +66,16 @@ async def update_agent(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_permission("agent", "update"))):
     """Update an agent."""
-    svc = AgentService(db)
-    return await svc.update(
-        agent_id,
-        tenant_id=user["tenant_id"],
-        data=body.model_dump(exclude_unset=True))
+    try:
+        svc = AgentService(db)
+        return await svc.update(
+            agent_id,
+            tenant_id=user["tenant_id"],
+            data=body.model_dump(exclude_unset=True))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update agent: {str(e)}")
 
 
 @router.post("/{agent_id}/publish")
@@ -69,8 +84,13 @@ async def publish_agent(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_permission("agent", "publish"))):
     """Publish an agent (draft -> published)."""
-    svc = AgentService(db)
-    return await svc.publish(agent_id, tenant_id=user["tenant_id"])
+    try:
+        svc = AgentService(db)
+        return await svc.publish(agent_id, tenant_id=user["tenant_id"])
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to publish agent: {str(e)}")
 
 
 @router.delete("/{agent_id}")
@@ -79,6 +99,11 @@ async def delete_agent(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_permission("agent", "delete"))):
     """Delete an agent."""
-    svc = AgentService(db)
-    await svc.delete(agent_id, tenant_id=user["tenant_id"])
-    return {"status": "deleted"}
+    try:
+        svc = AgentService(db)
+        await svc.delete(agent_id, tenant_id=user["tenant_id"])
+        return {"status": "deleted"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete agent: {str(e)}")

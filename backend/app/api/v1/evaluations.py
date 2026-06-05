@@ -6,6 +6,7 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user
+from app.core.rbac import require_permission
 from app.core.database import get_db
 from app.engines.eval_engine.evaluator import EvaluationEngine
 from app.engines.eval_engine.dataset import load_dataset, extract_from_logs
@@ -26,7 +27,7 @@ router = APIRouter(prefix="/evaluations", tags=["evaluations"])
 async def create_evaluation(
     body: CreateEvaluationRequest,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("evaluation", "create")),
 ):
     """Create a new evaluation task."""
     eval_model = EvaluationModel(
@@ -92,7 +93,7 @@ async def get_evaluation(
 async def run_evaluation(
     evaluation_id: str,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("evaluation", "create")),
 ):
     """Execute an evaluation run."""
     eval_model = await _get_eval(db, evaluation_id, user["tenant_id"])
@@ -186,7 +187,7 @@ async def get_run_results(
     user: dict = Depends(get_current_user),
 ):
     """Get detailed results for a specific run."""
-    stmt = select(EvaluationRunModel).where(EvaluationRunModel.id == run_id)
+    stmt = select(EvaluationRunModel).where(EvaluationRunModel.id == run_id, EvaluationRunModel.tenant_id == user.get("tenant_id"))
     result = await db.execute(stmt)
     run = result.scalar_one_or_none()
     if not run:
@@ -210,7 +211,7 @@ async def get_run_results(
 async def delete_evaluation(
     evaluation_id: str,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("evaluation", "delete")),
 ):
     """Delete an evaluation and its runs/results."""
     eval_model = await _get_eval(db, evaluation_id, user["tenant_id"])

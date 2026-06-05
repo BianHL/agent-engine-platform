@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user
+from app.core.rbac import require_permission
 from app.core.database import get_db
 from app.platform.conversation_service.conversation_service import ConversationService
 from app.schemas.api import (
@@ -28,6 +29,7 @@ async def list_conversations(
     return await svc.list_conversations(
         tenant_id=user["tenant_id"],
         user_id=user["id"],
+        agent_id=agent_id,
         page=page,
         size=size)
 
@@ -36,7 +38,7 @@ async def list_conversations(
 async def create_conversation(
     body: CreateConversationRequest,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("conversation", "create"))):
     """Create a new conversation."""
     svc = ConversationService(db)
     result = await svc.create(
@@ -45,6 +47,23 @@ async def create_conversation(
         agent_id=body.agent_id,
         title=body.title or "")
     return result
+
+
+@router.get("/search")
+async def search_conversations(
+    query: str = Query(..., min_length=1, description="Search query"),
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    user: dict = Depends(get_current_user)):
+    """Search conversations by title or message content."""
+    svc = ConversationService(db)
+    return await svc.search(
+        tenant_id=user["tenant_id"],
+        query=query,
+        user_id=user["id"],
+        page=page,
+        size=size)
 
 
 @router.get("/{conversation_id}")
@@ -64,7 +83,7 @@ async def get_conversation(
 async def delete_conversation(
     conversation_id: str,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("conversation", "delete"))):
     """Delete a conversation and all its messages."""
     svc = ConversationService(db)
     await svc.delete(conversation_id, tenant_id=user["tenant_id"])
@@ -90,7 +109,7 @@ async def add_message(
     conversation_id: str,
     body: AddMessageRequest,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("conversation", "create"))):
     """Add a message to a conversation."""
     svc = ConversationService(db)
     # Verify conversation exists and belongs to tenant
@@ -101,5 +120,6 @@ async def add_message(
         conversation_id=conversation_id,
         role=body.role,
         content=body.content,
+        tenant_id=user["tenant_id"],
         metadata=body.metadata)
     return result

@@ -718,12 +718,10 @@ class TestF010ResponsiveLayout:
 
     def test_agents_page_responsive_grid(self):
         content = _read_file(FRONTEND_ROOT / "app" / "(platform)" / "agents" / "page.tsx")
-        # Check for responsive column breakpoints
-        assert "xs=" in content or "sm=" in content or "lg=" in content
-        # Specifically check for the responsive Col props
-        assert "xs={24}" in content
-        assert "sm={12}" in content
-        assert "lg={8}" in content
+        # Implementation uses Tailwind CSS responsive grid, not Ant Design Col props
+        assert "grid-cols-1" in content
+        assert "sm:grid-cols-2" in content
+        assert "lg:grid-cols-3" in content
 
     def test_login_page_has_centered_layout(self):
         content = _read_file(FRONTEND_ROOT / "app" / "(auth)" / "login" / "page.tsx")
@@ -739,8 +737,9 @@ class TestF010ResponsiveLayout:
 
     def test_sidebar_has_fixed_width(self):
         content = _read_file(FRONTEND_ROOT / "components" / "Sidebar.tsx")
+        # Implementation uses CSS variable for sidebar width, not hardcoded pixels
         assert "width" in content
-        assert "200" in content
+        assert "ae-sidebar-width" in content
 
 
 class TestF011ErrorHandling:

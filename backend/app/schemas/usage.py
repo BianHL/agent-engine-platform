@@ -1,15 +1,16 @@
 """Usage and Model related schemas."""
 from datetime import datetime
+from decimal import Decimal
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class UsageSummaryResponse(BaseModel):
     total_input_tokens: int = 0
     total_output_tokens: int = 0
     total_cached_tokens: int = 0
-    total_cost: float = 0.0
+    total_cost: Decimal = Decimal("0")
     request_count: int = 0
     success_count: int = 0
     failure_count: int = 0
@@ -63,8 +64,8 @@ class CreateModelConfigRequest(BaseModel):
     supports_streaming: bool = True
     supports_function_calling: bool = False
     supports_vision: bool = False
-    input_price_per_1k: Optional[float] = None
-    output_price_per_1k: Optional[float] = None
+    input_price_per_1k: Optional[Decimal] = None
+    output_price_per_1k: Optional[Decimal] = None
 
 
 class UpdateModelConfigRequest(BaseModel):
@@ -77,8 +78,8 @@ class UpdateModelConfigRequest(BaseModel):
     supports_streaming: Optional[bool] = None
     supports_function_calling: Optional[bool] = None
     supports_vision: Optional[bool] = None
-    input_price_per_1k: Optional[float] = None
-    output_price_per_1k: Optional[float] = None
+    input_price_per_1k: Optional[Decimal] = None
+    output_price_per_1k: Optional[Decimal] = None
 
 
 class ModelProviderResponse(BaseModel):
@@ -94,13 +95,12 @@ class ModelProviderResponse(BaseModel):
     health_error_message: Optional[str] = None
     total_requests: int = 0
     total_tokens: int = 0
-    total_cost: float = 0.0
+    total_cost: Decimal = Decimal("0")
     created_by: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ModelConfigResponse(BaseModel):
@@ -118,13 +118,12 @@ class ModelConfigResponse(BaseModel):
     supports_streaming: bool = True
     supports_function_calling: bool = False
     supports_vision: bool = False
-    input_price_per_1k: Optional[float] = None
-    output_price_per_1k: Optional[float] = None
+    input_price_per_1k: Optional[Decimal] = None
+    output_price_per_1k: Optional[Decimal] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TenantUsageMonthlyResponse(BaseModel):
@@ -134,16 +133,15 @@ class TenantUsageMonthlyResponse(BaseModel):
     total_requests: int = 0
     total_input_tokens: int = 0
     total_output_tokens: int = 0
-    total_cost: float = 0.0
+    total_cost: Decimal = Decimal("0")
     cost_by_model: Optional[dict] = None
     cost_by_user: Optional[dict] = None
-    storage_used_gb: float = 0.0
-    bandwidth_used_gb: float = 0.0
+    storage_used_gb: Decimal = Decimal("0")
+    bandwidth_used_gb: Decimal = Decimal("0")
     status: str = "draft"
     confirmed_at: Optional[datetime] = None
     invoiced_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

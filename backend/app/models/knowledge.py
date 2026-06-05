@@ -1,7 +1,7 @@
 """Knowledge Base and Document models."""
 from datetime import UTC, datetime
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, Float, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Integer, JSON, Numeric, String, Text
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base, EnterpriseMixin, OptimisticLockMixin, generate_uuid
@@ -25,7 +25,7 @@ class KnowledgeBaseModel(Base, EnterpriseMixin, OptimisticLockMixin):
     chunking_strategy = Column(String(20), default="recursive")
     retrieval_mode = Column(String(20), default="hybrid")
     retrieval_top_k = Column(Integer, default=5)
-    score_threshold = Column(Float, default=0.5)
+    score_threshold = Column(Numeric(3, 2), default=0.5)
     rerank_enabled = Column(Boolean, default=False)
     rerank_model = Column(String(100), nullable=True)
     document_count = Column(Integer, default=0)
@@ -44,7 +44,7 @@ class DocumentModel(Base, EnterpriseMixin, OptimisticLockMixin):
     __tablename__ = "documents"
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    tenant_id = Column(String(36), index=True, nullable=False)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), index=True, nullable=False)
     knowledge_base_id = Column(String(36), ForeignKey("knowledge_bases.id"), index=True, nullable=False)
     filename = Column(String(255), nullable=False)
     file_type = Column(String(20))
@@ -77,7 +77,7 @@ class DocumentSegmentModel(Base):
     id = Column(String(36), primary_key=True, default=generate_uuid)
     document_id = Column(String(36), ForeignKey("documents.id"), index=True, nullable=False)
     tenant_id = Column(String(36), ForeignKey("tenants.id"), nullable=False)
-    knowledge_base_id = Column(String(36), index=True, nullable=False)
+    knowledge_base_id = Column(String(36), ForeignKey("knowledge_bases.id"), index=True, nullable=False)
     content = Column(Text, nullable=False)
     content_hash = Column(String(64), nullable=True, index=True)
     segment_index = Column(Integer, nullable=False)
@@ -95,9 +95,4 @@ class DocumentSegmentModel(Base):
 
     # relationships
     document = relationship("DocumentModel", back_populates="segments")
-    parent = relationship("DocumentSegmentModel", remote_side="DocumentSegmentModel.id", backref="children")
-
-
-class ChunkModel(Base):
-    """Alias for DocumentSegmentModel for backward compatibility."""
-    __tablename__ = "document_segments"
+    parent = relationship("DocumentSegmentModel", remote_side=[id], backref="children")

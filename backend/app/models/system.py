@@ -1,7 +1,7 @@
 """System configuration models (RBAC, Webhooks, Triggers, Model Providers, Usage, etc)."""
 from datetime import UTC, datetime
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, Float, ForeignKey, Index, Integer, JSON, String, Text, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, Float, ForeignKey, Index, Integer, JSON, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base, EnterpriseMixin, OptimisticLockMixin, generate_uuid
@@ -28,6 +28,10 @@ class RoleModel(Base, EnterpriseMixin):
     # relationships
     tenant = relationship("TenantModel", back_populates="roles")
     role_permissions = relationship("RolePermissionModel", back_populates="role", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "code", name="uk_roles_tenant_code"),
+    )
 
 
 class PermissionModel(Base):
@@ -56,6 +60,10 @@ class RolePermissionModel(Base):
     # relationships
     role = relationship("RoleModel", back_populates="role_permissions")
     permission = relationship("PermissionModel", back_populates="role_permissions")
+
+    __table_args__ = (
+        UniqueConstraint("role_id", "permission_id", name="uk_role_perm"),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -173,7 +181,7 @@ class ModelProviderModel(Base, EnterpriseMixin, OptimisticLockMixin):
     health_error_message = Column(Text, nullable=True)
     total_requests = Column(Integer, default=0)
     total_tokens = Column(Integer, default=0)
-    total_cost = Column(Float, default=0.0)
+    total_cost = Column(Numeric(12, 4), default=0.0)
     version = Column(Integer, default=1)
 
     # relationships
@@ -185,7 +193,7 @@ class ModelConfigModel(Base, OptimisticLockMixin):
     __tablename__ = "model_configs"
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    tenant_id = Column(String(36), index=True, nullable=False)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), index=True, nullable=False)
     provider_id = Column(String(36), ForeignKey("model_providers.id"), index=True, nullable=False)
     model_name = Column(String(100), nullable=False)
     model_type = Column(String(20), nullable=False, index=True)
@@ -198,8 +206,8 @@ class ModelConfigModel(Base, OptimisticLockMixin):
     supports_streaming = Column(Boolean, default=True)
     supports_function_calling = Column(Boolean, default=False)
     supports_vision = Column(Boolean, default=False)
-    input_price_per_1k = Column(Float, nullable=True)
-    output_price_per_1k = Column(Float, nullable=True)
+    input_price_per_1k = Column(Numeric(10, 6), nullable=True)
+    output_price_per_1k = Column(Numeric(10, 6), nullable=True)
     deleted_at = Column(DateTime, nullable=True, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None), onupdate=lambda: datetime.now(UTC).replace(tzinfo=None))
@@ -216,8 +224,8 @@ class UsageLogModel(Base):
     __tablename__ = "usage_logs"
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    tenant_id = Column(String(36), index=True, nullable=False)
-    user_id = Column(String(36), index=True)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), index=True, nullable=False)
+    user_id = Column(String(36), ForeignKey("users.id"), index=True, nullable=True)
     agent_id = Column(String(36), nullable=True, index=True)
     conversation_id = Column(String(36), nullable=True)
     message_id = Column(String(36), nullable=True)
@@ -226,7 +234,7 @@ class UsageLogModel(Base):
     input_tokens = Column(Integer, default=0)
     output_tokens = Column(Integer, default=0)
     cached_tokens = Column(Integer, default=0)
-    cost = Column(Float, default=0.0)
+    cost = Column(Numeric(10, 6), default=0.0)
     request_type = Column(String(20))
     status = Column(String(20), default="success")
     latency_ms = Column(Integer, nullable=True)
@@ -251,7 +259,7 @@ class ModelUsageDailyModel(Base):
     total_input_tokens = Column(Integer, default=0)
     total_output_tokens = Column(Integer, default=0)
     total_cached_tokens = Column(Integer, default=0)
-    total_cost = Column(Float, default=0.0)
+    total_cost = Column(Numeric(10, 6), default=0.0)
     avg_latency_ms = Column(Integer, nullable=True)
     p99_latency_ms = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
@@ -267,16 +275,16 @@ class TenantUsageMonthlyModel(Base):
     __tablename__ = "tenant_usage_monthly"
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    tenant_id = Column(String(36), nullable=False)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), index=True, nullable=False)
     year_month = Column(String(7), nullable=False)
     total_requests = Column(Integer, default=0)
     total_input_tokens = Column(BigInteger, default=0)
     total_output_tokens = Column(BigInteger, default=0)
-    total_cost = Column(Float, default=0.0)
+    total_cost = Column(Numeric(10, 6), default=0.0)
     cost_by_model = Column(JSON, nullable=True)
     cost_by_user = Column(JSON, nullable=True)
-    storage_used_gb = Column(Float, default=0.0)
-    bandwidth_used_gb = Column(Float, default=0.0)
+    storage_used_gb = Column(Numeric(10, 2), default=0.0)
+    bandwidth_used_gb = Column(Numeric(10, 2), default=0.0)
     status = Column(String(20), default="draft")
     confirmed_at = Column(DateTime, nullable=True)
     invoiced_at = Column(DateTime, nullable=True)
@@ -327,8 +335,8 @@ class ToolExecutionModel(Base):
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
     tool_id = Column(String(36), ForeignKey("tools.id"), index=True, nullable=False)
-    tenant_id = Column(String(36), ForeignKey("tenants.id"), nullable=False)
-    user_id = Column(String(36), ForeignKey("users.id"), nullable=True)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), index=True, nullable=False)
+    user_id = Column(String(36), ForeignKey("users.id"), index=True, nullable=True)
     conversation_id = Column(String(36), nullable=True, index=True)
     message_id = Column(String(36), nullable=True)
     agent_id = Column(String(36), nullable=True)
@@ -374,7 +382,7 @@ class EvaluationRunModel(Base):
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
     evaluation_id = Column(String(36), ForeignKey("evaluations.id"), index=True, nullable=False)
-    tenant_id = Column(String(36), ForeignKey("tenants.id"), nullable=False)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), index=True, nullable=False)
     status = Column(String(20), default="pending", index=True)
     started_at = Column(DateTime)
     completed_at = Column(DateTime)
@@ -382,7 +390,7 @@ class EvaluationRunModel(Base):
     summary = Column(JSON, default=dict)
     avg_scores = Column(JSON, nullable=True)
     total_tokens = Column(Integer, default=0)
-    total_cost = Column(Float, default=0.0)
+    total_cost = Column(Numeric(10, 6), default=0.0)
     created_by = Column(String(36), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
 
@@ -396,7 +404,7 @@ class EvaluationResultModel(Base):
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
     run_id = Column(String(36), ForeignKey("evaluation_runs.id"), index=True, nullable=False)
-    evaluation_id = Column(String(36), nullable=False, index=True)
+    evaluation_id = Column(String(36), ForeignKey("evaluations.id"), nullable=False, index=True)
     test_case_index = Column(Integer, nullable=False)
     input_text = Column(Text)
     expected_output = Column(Text)
@@ -439,7 +447,7 @@ class AccountIntegrateModel(Base):
     id = Column(String(36), primary_key=True, default=generate_uuid)
     user_id = Column(String(36), ForeignKey("users.id"), index=True, nullable=False)
     provider_id = Column(String(36), ForeignKey("oauth_providers.id"), index=True, nullable=False)
-    tenant_id = Column(String(36), nullable=False, index=True)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), nullable=False, index=True)
     external_id = Column(String(200), nullable=False)
     external_username = Column(String(200), nullable=True)
     external_email = Column(String(200), nullable=True)
@@ -449,6 +457,10 @@ class AccountIntegrateModel(Base):
     raw_profile = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None), onupdate=lambda: datetime.now(UTC).replace(tzinfo=None))
+
+    __table_args__ = (
+        UniqueConstraint("provider_id", "external_id", name="uk_account_integrate"),
+    )
 
     @property
     def access_token(self):
@@ -523,7 +535,7 @@ class MarketplaceAppModel(Base):
     version = Column(String(20))
     status = Column(String(20), default="pending", index=True)
     install_count = Column(Integer, default=0)
-    rating = Column(Float, default=0.0)
+    rating = Column(Numeric(3, 2), default=0.0)
     deleted_at = Column(DateTime, nullable=True, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None), onupdate=lambda: datetime.now(UTC).replace(tzinfo=None))
@@ -538,7 +550,7 @@ class AppInstallationModel(Base):
     id = Column(String(36), primary_key=True, default=generate_uuid)
     app_id = Column(String(36), ForeignKey("marketplace_apps.id"), index=True, nullable=False)
     tenant_id = Column(String(36), ForeignKey("tenants.id"), nullable=False, index=True)
-    installed_by = Column(String(36), ForeignKey("users.id"), nullable=False)
+    installed_by = Column(String(36), ForeignKey("users.id"), index=True, nullable=False)
     config = Column(JSON, default=dict)
     status = Column(String(20), default="active")
     installed_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
@@ -586,7 +598,7 @@ class FileAssetModel(Base):
     resource_id = Column(String(36), nullable=True)
     is_public = Column(Boolean, default=False)
     access_url = Column(String(500), nullable=True)
-    uploaded_by = Column(String(36), ForeignKey("users.id"), nullable=False)
+    uploaded_by = Column(String(36), ForeignKey("users.id"), index=True, nullable=False)
     deleted_at = Column(DateTime, nullable=True, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
 
@@ -603,7 +615,7 @@ class TenantInvitationModel(Base):
     email = Column(String(200), nullable=False, index=True)
     role = Column(String(20), default="user")
     role_id = Column(String(36), nullable=True)
-    invited_by = Column(String(36), ForeignKey("users.id"), nullable=False)
+    invited_by = Column(String(36), ForeignKey("users.id"), index=True, nullable=False)
     status = Column(String(20), default="pending", index=True)
     token = Column(String(64), unique=True, nullable=False)
     expires_at = Column(DateTime)
@@ -645,7 +657,7 @@ class TraceSpanModel(Base):
     parent_span_id = Column(String(36), nullable=True, index=True)
     span_type = Column(String(30), nullable=False)
     name = Column(String(200), nullable=False)
-    tenant_id = Column(String(36), nullable=False, index=True)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), nullable=False, index=True)
     user_id = Column(String(36), nullable=True)
     agent_id = Column(String(36), nullable=True)
     conversation_id = Column(String(36), nullable=True)
@@ -658,5 +670,5 @@ class TraceSpanModel(Base):
     output = Column(JSON, nullable=True)
     attributes = Column(JSON, nullable=True)
     tokens = Column(Integer, nullable=True)
-    cost = Column(Float, nullable=True)
+    cost = Column(Numeric(10, 6), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None), index=True)

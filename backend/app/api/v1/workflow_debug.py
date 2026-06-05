@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from app.core.auth import get_current_user
+from app.core.rbac import require_permission
 from app.engines.workflow_engine.workflow import DebugMode, DebugSession
 from app.engines.workflow_engine.debug_store import get_debug_store
 
@@ -49,7 +50,7 @@ class ContinueDebugRequest(BaseModel):
 async def start_debug_session(
     workflow_id: str,
     body: StartDebugRequest,
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("workflow", "create")),
 ):
     """Start a debug session for a workflow."""
     session = DebugSession(
@@ -70,7 +71,7 @@ async def start_debug_session(
 async def continue_debug_session(
     workflow_id: str,
     body: ContinueDebugRequest,
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("workflow", "create")),
 ):
     """Continue execution from a breakpoint or step-through pause."""
     store = get_debug_store()
@@ -116,7 +117,7 @@ async def get_debug_state(
 @router.post("/{workflow_id}/debug/stop", status_code=status.HTTP_200_OK)
 async def stop_debug_session(
     workflow_id: str,
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("workflow", "create")),
 ):
     """Stop (clear) an active debug session."""
     store = get_debug_store()

@@ -68,7 +68,7 @@ describe('Header', () => {
 
   it('renders search button with keyboard shortcut', () => {
     render(<Header />);
-    expect(screen.getByText('Search...')).toBeInTheDocument();
+    expect(screen.getByText('Search agents, workflows...')).toBeInTheDocument();
     expect(screen.getByText('⌘K')).toBeInTheDocument();
   });
 

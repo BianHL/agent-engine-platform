@@ -4,39 +4,44 @@ import LoadingSpinner from '../LoadingSpinner';
 
 describe('LoadingSpinner', () => {
   it('renders a spinner by default', () => {
-    const { container } = render(<LoadingSpinner />);
-    expect(container.querySelector('.ant-spin')).toBeInTheDocument();
+    render(<LoadingSpinner />);
+    expect(screen.getByRole('status')).toBeInTheDocument();
   });
 
-  it('renders with default large size', () => {
-    const { container } = render(<LoadingSpinner />);
-    expect(container.querySelector('.ant-spin-lg')).toBeInTheDocument();
+  it('renders with default large size (36px)', () => {
+    render(<LoadingSpinner />);
+    const spinner = screen.getByRole('status');
+    expect(spinner.style.width).toBe('36px');
+    expect(spinner.style.height).toBe('36px');
   });
 
-  it('renders with small size', () => {
-    const { container } = render(<LoadingSpinner size="small" />);
-    expect(container.querySelector('.ant-spin-sm')).toBeInTheDocument();
+  it('renders with small size (16px)', () => {
+    render(<LoadingSpinner size="small" />);
+    const spinner = screen.getByRole('status');
+    expect(spinner.style.width).toBe('16px');
+    expect(spinner.style.height).toBe('16px');
   });
 
-  it('renders with default size', () => {
-    const { container } = render(<LoadingSpinner size="default" />);
-    // default size has neither sm nor lg class
-    expect(container.querySelector('.ant-spin')).toBeInTheDocument();
-    expect(container.querySelector('.ant-spin-sm')).not.toBeInTheDocument();
-    expect(container.querySelector('.ant-spin-lg')).not.toBeInTheDocument();
+  it('renders with default size (24px)', () => {
+    render(<LoadingSpinner size="default" />);
+    const spinner = screen.getByRole('status');
+    expect(spinner.style.width).toBe('24px');
+    expect(spinner.style.height).toBe('24px');
   });
 
-  it('renders without errors when tip is provided', () => {
-    const { container } = render(<LoadingSpinner tip="Loading data..." fullScreen />);
-    // antd Spin only renders tip text in nested (with children) mode
-    expect(container.querySelector('.ant-spin')).toBeInTheDocument();
+  it('renders tip text when provided', () => {
+    render(<LoadingSpinner tip="Loading data..." />);
+    expect(screen.getByText('Loading data...')).toBeInTheDocument();
   });
 
-  it('renders Spin component in all configurations', () => {
-    const { container: c1 } = render(<LoadingSpinner />);
-    const { container: c2 } = render(<LoadingSpinner fullScreen />);
-    expect(c1.querySelector('.ant-spin')).toBeInTheDocument();
-    expect(c2.querySelector('.ant-spin')).toBeInTheDocument();
+  it('sets aria-label from tip', () => {
+    render(<LoadingSpinner tip="Loading data..." />);
+    expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'Loading data...');
+  });
+
+  it('sets default aria-label when no tip', () => {
+    render(<LoadingSpinner />);
+    expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'Loading');
   });
 
   it('applies fullScreen styles when fullScreen is true', () => {
@@ -50,5 +55,11 @@ describe('LoadingSpinner', () => {
     const { container } = render(<LoadingSpinner />);
     const wrapper = container.firstElementChild as HTMLElement;
     expect(wrapper.style.padding).toBe('40px 0px');
+  });
+
+  it('has spinner animation', () => {
+    render(<LoadingSpinner />);
+    const spinner = screen.getByRole('status');
+    expect(spinner.style.animation).toContain('ae-spin');
   });
 });

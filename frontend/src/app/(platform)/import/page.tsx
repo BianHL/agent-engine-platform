@@ -10,7 +10,7 @@ import {
   LoadingOutlined, ExclamationCircleOutlined, RocketOutlined,
   FileTextOutlined, RobotOutlined, ToolOutlined, BranchesOutlined
 } from '@ant-design/icons';
-import { api } from '@/lib/api';
+import api from '@/lib/api';
 
 const { Title, Text, Paragraph } = Typography;
 const { Dragger } = Upload;

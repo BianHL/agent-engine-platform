@@ -134,6 +134,7 @@ class MockLLMAdapter:
 @pytest_asyncio.fixture
 async def app_client(db_engine, seed_data):
     """Create test client with real SQLite DB."""
+    from unittest.mock import AsyncMock, patch
     from app.main import app
 
     session_factory = async_sessionmaker(db_engine, class_=AsyncSession, expire_on_commit=False)
@@ -148,10 +149,22 @@ async def app_client(db_engine, seed_data):
     # Set mock LLM adapter for chat endpoints
     app.state.llm_adapter = MockLLMAdapter()
 
-    from httpx import ASGITransport
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as c:
-        yield c
+    # Mock Redis to avoid fail-closed auth rejection
+    mock_redis = AsyncMock()
+    mock_redis.get = AsyncMock(return_value=None)
+    mock_redis.set = AsyncMock()
+    mock_redis.setex = AsyncMock()
+    mock_redis.exists = AsyncMock(return_value=0)
+    mock_redis.delete = AsyncMock()
+    mock_redis.ping = AsyncMock(return_value=True)
+
+    with patch("app.core.redis.get_redis", return_value=mock_redis):
+        with patch("app.core.auth.get_redis", return_value=mock_redis):
+            with patch("app.api.v1.chat.async_session", session_factory):
+                from httpx import ASGITransport
+                transport = ASGITransport(app=app)
+                async with AsyncClient(transport=transport, base_url="http://test") as c:
+                    yield c
 
     app.dependency_overrides.clear()
     if hasattr(app.state, "llm_adapter"):

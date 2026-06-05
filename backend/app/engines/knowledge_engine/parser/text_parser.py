@@ -1,4 +1,8 @@
+import logging
+
 from app.engines.knowledge_engine.parser.base import BaseDocumentParser
+
+logger = logging.getLogger(__name__)
 
 
 class TextParser(BaseDocumentParser):
@@ -18,7 +22,7 @@ class TextParser(BaseDocumentParser):
                 soup = BeautifulSoup(content, "html.parser")
                 content = soup.get_text(separator="\n", strip=True)
             except ImportError:
-                pass
+                logger.debug("BeautifulSoup not available, skipping HTML parsing")
         elif ext == "csv":
             import csv
             import io

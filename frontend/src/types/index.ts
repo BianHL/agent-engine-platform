@@ -128,7 +128,13 @@ export interface AuditLog {
 }
 
 // Workflow Types
-export type NodeType = 'llm' | 'code' | 'condition' | 'parallel' | 'loop' | 'http' | 'human' | 'sub_workflow';
+export type NodeType =
+  | 'start' | 'end'
+  | 'llm' | 'knowledge' | 'question_classifier' | 'parameter_extractor'
+  | 'code' | 'template' | 'variable'
+  | 'condition' | 'parallel' | 'iteration'
+  | 'http' | 'tool' | 'human' | 'sub_workflow'
+  | 'answer';
 
 export interface WorkflowNodeData extends Record<string, unknown> {
   id: string;

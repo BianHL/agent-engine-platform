@@ -1,7 +1,7 @@
 """Multi-Agent/Crew related models."""
 from datetime import UTC, datetime
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, Numeric, String, Text
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base, EnterpriseMixin, generate_uuid
@@ -41,7 +41,7 @@ class CrewExecutionModel(Base):
     completed_at = Column(DateTime, nullable=True)
     duration_ms = Column(Integer, nullable=True)
     total_tokens = Column(Integer, default=0)
-    total_cost = Column(Float, default=0.0)
+    total_cost = Column(Numeric(10, 6), default=0.0)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None), onupdate=lambda: datetime.now(UTC).replace(tzinfo=None))
 
@@ -85,3 +85,6 @@ class HandoffModel(Base, EnterpriseMixin):
     status = Column(String(20), default="active")
     total_handoffs = Column(Integer, default=0)
     last_handoff_at = Column(DateTime, nullable=True)
+
+    # relationships
+    source_agent = relationship("AgentModel", foreign_keys=[source_agent_id], overlaps="handoffs")

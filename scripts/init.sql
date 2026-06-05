@@ -1702,6 +1702,119 @@ VALUES
      '{"system_prompt": "你是一名编程专家。帮助解答代码问题，审查代码并建议改进。支持多种语言。", "tools": ["tool-code-executor", "tool-web-search"]}',
      '💻', TRUE, 'active', '1.0.0');
 
+
+-- ============================================================
+-- v2.1 补充表（ORM模型已定义，SQL缺失）
+-- ============================================================
+
+-- A/B测试表
+CREATE TABLE IF NOT EXISTS ab_tests (
+    id VARCHAR(36) PRIMARY KEY,
+    agent_id VARCHAR(36) NOT NULL COMMENT '测试Agent',
+    name VARCHAR(100) NOT NULL COMMENT '测试名称',
+    description TEXT NULL,
+    version_a_id VARCHAR(36) NOT NULL COMMENT '版本A',
+    version_b_id VARCHAR(36) NOT NULL COMMENT '版本B',
+    traffic_split DECIMAL(3,2) NOT NULL DEFAULT 0.50 COMMENT '流量分配',
+    metric VARCHAR(50) NOT NULL DEFAULT 'satisfaction' COMMENT '评估指标',
+    duration_hours INT NOT NULL DEFAULT 24,
+    min_samples INT NOT NULL DEFAULT 100,
+    status VARCHAR(20) NOT NULL DEFAULT 'created' COMMENT 'created/running/completed/stopped',
+    started_at DATETIME NULL,
+    ended_at DATETIME NULL,
+    results JSON NULL,
+    tenant_id VARCHAR(36) NOT NULL,
+    created_by VARCHAR(36) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_ab_agent (agent_id),
+    INDEX idx_ab_tenant (tenant_id),
+    INDEX idx_ab_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='A/B测试表';
+
+-- 插件表
+CREATE TABLE IF NOT EXISTS plugins (
+    id VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(100) NOT NULL COMMENT '插件名称',
+    description TEXT NULL,
+    version VARCHAR(20) NOT NULL,
+    author VARCHAR(100) DEFAULT '',
+    category VARCHAR(50) DEFAULT 'general',
+    tags JSON DEFAULT NULL,
+    icon VARCHAR(500) NULL,
+    homepage VARCHAR(500) NULL,
+    repository VARCHAR(500) NULL,
+    config_schema JSON NULL,
+    entry_point VARCHAR(200) NOT NULL,
+    dependencies JSON DEFAULT NULL,
+    permissions JSON DEFAULT NULL,
+    downloads INT NOT NULL DEFAULT 0,
+    rating DECIMAL(3,2) NOT NULL DEFAULT 0.00,
+    rating_count INT NOT NULL DEFAULT 0,
+    status VARCHAR(20) NOT NULL DEFAULT 'draft' COMMENT 'draft/published/archived',
+    tenant_id VARCHAR(36) NOT NULL,
+    created_by VARCHAR(36) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_plugins_name (name),
+    INDEX idx_plugins_tenant (tenant_id),
+    INDEX idx_plugins_category (category)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='插件表';
+
+-- 插件安装表
+CREATE TABLE IF NOT EXISTS plugin_installs (
+    id VARCHAR(36) PRIMARY KEY,
+    plugin_id VARCHAR(36) NOT NULL,
+    tenant_id VARCHAR(36) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'active' COMMENT 'active/inactive/error',
+    config JSON NULL,
+    installed_by VARCHAR(36) NOT NULL,
+    installed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_pi_plugin (plugin_id),
+    INDEX idx_pi_tenant (tenant_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='插件安装表';
+
+-- 插件评分表
+CREATE TABLE IF NOT EXISTS plugin_ratings (
+    id VARCHAR(36) PRIMARY KEY,
+    plugin_id VARCHAR(36) NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
+    score INT NOT NULL COMMENT '1-5分',
+    comment TEXT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_pr_plugin (plugin_id),
+    INDEX idx_pr_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='插件评分表';
+
+-- 合规报告表
+CREATE TABLE IF NOT EXISTS compliance_reports (
+    id VARCHAR(36) PRIMARY KEY,
+    report_type VARCHAR(50) NOT NULL COMMENT '报告类型',
+    period_start DATETIME NOT NULL,
+    period_end DATETIME NOT NULL,
+    summary JSON NOT NULL,
+    details JSON NULL,
+    format VARCHAR(20) NOT NULL DEFAULT 'json',
+    tenant_id VARCHAR(36) NOT NULL,
+    created_by VARCHAR(36) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_cr_type (report_type),
+    INDEX idx_cr_tenant (tenant_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='合规报告表';
+
+-- 市场变更日志表
+CREATE TABLE IF NOT EXISTS marketplace_change_logs (
+    id VARCHAR(36) PRIMARY KEY,
+    item_id VARCHAR(36) NOT NULL COMMENT '市场项目ID',
+    operator_id VARCHAR(36) NOT NULL COMMENT '操作者ID',
+    change_type VARCHAR(20) NOT NULL COMMENT 'create/update/status_change',
+    before_snapshot JSON NULL,
+    after_snapshot JSON NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_mcl_item (item_id),
+    INDEX idx_mcl_operator (operator_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='市场变更日志表';
+
 -- ================================================================
 -- 表结构变更说明
 -- ================================================================

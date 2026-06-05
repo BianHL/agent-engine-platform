@@ -978,7 +978,7 @@ class TestUsageReports:
 
         assert usage["total_input_tokens"] == 300
         assert usage["total_output_tokens"] == 150
-        assert abs(usage["total_cost"] - 0.03) < 1e-9
+        assert abs(float(usage["total_cost"]) - 0.03) < 1e-9
         assert usage["request_count"] == 3
 
     @pytest.mark.asyncio
@@ -1004,7 +1004,7 @@ class TestUsageReports:
 
         assert usage_a["request_count"] == 1
         assert usage_b["request_count"] == 1
-        assert abs(usage_a["total_cost"] - 0.05) < 1e-9
+        assert abs(float(usage_a["total_cost"]) - 0.05) < 1e-9
 
 
 # =========================================================================
@@ -1054,6 +1054,6 @@ class TestUsagePerModel:
         assert "gpt-4o" in rows
         assert "claude-sonnet-4-20250514" in rows
         assert rows["gpt-4o"].count == 2
-        assert abs(rows["gpt-4o"].total_cost - 0.10) < 1e-9
+        assert abs(float(rows["gpt-4o"].total_cost) - 0.10) < 1e-9
         assert rows["claude-sonnet-4-20250514"].count == 1
-        assert abs(rows["claude-sonnet-4-20250514"].total_cost - 0.08) < 1e-9
+        assert abs(float(rows["claude-sonnet-4-20250514"].total_cost) - 0.08) < 1e-9

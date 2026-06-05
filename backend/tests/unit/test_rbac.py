@@ -33,7 +33,10 @@ class TestPermissionsDict:
 
     def test_expected_resources_exist(self):
         expected = {"agent", "knowledge", "workflow", "tool", "conversation",
-                    "user", "tenant", "audit", "api_token", "webhook", "role"}
+                    "chat", "user", "tenant", "audit", "api_token", "webhook", "role",
+                    "marketplace", "model", "memory", "evaluation", "feedback",
+                    "annotation", "variable", "task", "multi_agent", "plugin",
+                    "compliance", "data_import"}
         assert expected == set(PERMISSIONS.keys())
 
     def test_agent_actions(self):
@@ -181,7 +184,14 @@ class TestGetUserPermissions:
         execute_results = [mock_result_user, mock_result_role]
         mock_db.execute = AsyncMock(side_effect=execute_results)
 
-        perms = await get_user_permissions("u1", "t1", mock_db)
+        # Mock Redis to simulate cache miss
+        mock_redis = AsyncMock()
+        mock_redis.get = AsyncMock(return_value=None)
+        mock_redis.set = AsyncMock()
+
+        with patch("app.core.redis.get_redis", return_value=mock_redis):
+            perms = await get_user_permissions("u1", "t1", mock_db)
+
         # Admin fallback should return all permissions
         assert "agent:create" in perms
         assert "tenant:manage_features" in perms
@@ -194,7 +204,12 @@ class TestGetUserPermissions:
         mock_result.scalar_one_or_none.return_value = None
         mock_db.execute = AsyncMock(return_value=mock_result)
 
-        perms = await get_user_permissions("unknown", "t1", mock_db)
+        mock_redis = AsyncMock()
+        mock_redis.get = AsyncMock(return_value=None)
+        mock_redis.set = AsyncMock()
+
+        with patch("app.core.redis.get_redis", return_value=mock_redis):
+            perms = await get_user_permissions("unknown", "t1", mock_db)
         assert perms == set()
 
     @pytest.mark.asyncio
@@ -211,7 +226,12 @@ class TestGetUserPermissions:
 
         mock_db.execute = AsyncMock(side_effect=[mock_result_user, mock_result_role])
 
-        perms = await get_user_permissions("u1", "t1", mock_db)
+        mock_redis = AsyncMock()
+        mock_redis.get = AsyncMock(return_value=None)
+        mock_redis.set = AsyncMock()
+
+        with patch("app.core.redis.get_redis", return_value=mock_redis):
+            perms = await get_user_permissions("u1", "t1", mock_db)
         assert perms == set()
 
 

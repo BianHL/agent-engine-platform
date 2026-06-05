@@ -18,7 +18,7 @@ export function showToast(message: string, type: 'success' | 'error' | 'warning'
   const id = Date.now().toString();
   toasts.push({ id, message, type });
   notify();
-  const dismissMs = type === 'error' ? 8000 : 4000;
+  const dismissMs = type === 'error' ? 5000 : 3000;
   setTimeout(() => {
     toasts = toasts.filter(t => t.id !== id);
     notify();
@@ -62,9 +62,9 @@ export function ToastContainer() {
 function ToastItem({ toast }: { toast: Toast }) {
   const icons = { success: '✓', error: '✕', warning: '!' };
   const bgColors = {
-    success: 'rgba(111,155,124,.12)',
-    error: 'rgba(196,122,110,.12)',
-    warning: 'rgba(208,164,93,.12)',
+    success: 'var(--ae-bg-success)',
+    error: 'var(--ae-bg-danger)',
+    warning: 'var(--ae-bg-warning)',
   };
 
   return (
@@ -72,7 +72,7 @@ function ToastItem({ toast }: { toast: Toast }) {
       style={{
         pointerEvents: 'auto',
         padding: '14px 18px',
-        borderRadius: 'var(--ae-radius-lg)',
+        borderRadius: 'var(--ae-radius-md)',
         border: '1px solid var(--ae-line)',
         background: 'var(--ae-panel-strong)',
         boxShadow: 'var(--ae-shadow)',

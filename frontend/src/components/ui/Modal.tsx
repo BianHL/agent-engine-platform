@@ -7,8 +7,12 @@ interface ModalProps {
   children: React.ReactNode;
   onClose: () => void;
   footer?: React.ReactNode;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  maskClosable?: boolean;
   className?: string;
 }
+
+const sizeMaxWidth = { sm: '400px', md: '480px', lg: '640px', xl: '800px' };
 
 export default function Modal({
   open,
@@ -16,6 +20,8 @@ export default function Modal({
   children,
   onClose,
   footer,
+  size = 'md',
+  maskClosable = true,
   className = '',
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -82,7 +88,7 @@ export default function Modal({
   return (
     <div
       className="modal-overlay"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => { if (maskClosable && e.target === e.currentTarget) onClose(); }}
       style={{
         position: 'fixed',
         inset: 0,
@@ -103,7 +109,7 @@ export default function Modal({
         className={`modal-content ${className}`}
         style={{
           width: '90%',
-          maxWidth: 480,
+          maxWidth: sizeMaxWidth[size],
           borderRadius: 'var(--ae-radius-xl)',
           border: '1px solid var(--ae-line)',
           background: 'linear-gradient(180deg, var(--ae-panel-strong), var(--ae-panel))',

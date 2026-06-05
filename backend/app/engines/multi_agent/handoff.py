@@ -284,8 +284,8 @@ class HandoffManager:
                     context_summary=data.get("context_summary", ""),
                     pending_tasks=data.get("pending_tasks", []),
                 )
-        except (json.JSONDecodeError, TypeError, KeyError):
-            pass
+        except (json.JSONDecodeError, TypeError, KeyError) as e:
+            logger.debug("Handoff message parse failed, returning None: %s", e)
         return None
 
     @staticmethod

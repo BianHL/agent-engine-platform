@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user, require_role
+from app.core.rbac import require_permission
 from app.core.database import get_db
 from app.platform.tenant_service.tenant_service import TenantService
 from app.schemas.api import (

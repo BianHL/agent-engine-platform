@@ -158,8 +158,9 @@ async def test_memory_engine_get_context():
 
 @pytest.mark.asyncio
 async def test_memory_engine_clear_session():
-    """Clearing session removes short-term memory."""
+    """Clearing session removes short-term, working, and summary memory."""
     redis = _make_mock_redis()
     engine = MemoryEngine(redis_client=redis)
     await engine.clear_session("sess1")
-    redis.delete.assert_called_once()
+    # clear_session deletes 3 keys: short-term, working, and summary
+    assert redis.delete.call_count == 3

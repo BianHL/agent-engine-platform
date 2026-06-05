@@ -1,7 +1,7 @@
 """Workflow related models."""
 from datetime import UTC, datetime
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, JSON, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base, EnterpriseMixin, OptimisticLockMixin, generate_uuid
@@ -58,6 +58,10 @@ class WorkflowNodeModel(Base):
     # relationships
     workflow = relationship("WorkflowModel", back_populates="nodes")
 
+    __table_args__ = (
+        UniqueConstraint("workflow_id", "node_id", name="uk_wn_node"),
+    )
+
 
 class WorkflowEdgeModel(Base):
     __tablename__ = "workflow_edges"
@@ -81,8 +85,8 @@ class WorkflowExecutionModel(Base):
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
     workflow_id = Column(String(36), ForeignKey("workflows.id"), index=True, nullable=False)
-    workflow_version = Column(Integer, nullable=False)
-    tenant_id = Column(String(36), index=True, nullable=False)
+    workflow_version = Column(Integer, nullable=False, default=1)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), index=True, nullable=False)
     trigger_type = Column(String(20), default="manual")
     trigger_id = Column(String(36), nullable=True)
     status = Column(String(20), default="running", index=True)
@@ -101,7 +105,7 @@ class WorkflowExecutionModel(Base):
     completed_at = Column(DateTime, nullable=True)
     duration_ms = Column(Integer, nullable=True)
     total_tokens = Column(Integer, default=0)
-    total_cost = Column(Float, default=0.0)
+    total_cost = Column(Numeric(10, 6), default=0.0)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None), onupdate=lambda: datetime.now(UTC).replace(tzinfo=None))
 

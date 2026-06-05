@@ -9,7 +9,7 @@ import {
   ExperimentOutlined, PlayCircleOutlined, ClockCircleOutlined,
   CheckCircleOutlined, CloseCircleOutlined
 } from '@ant-design/icons';
-import { api } from '@/lib/api';
+import api from '@/lib/api';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;

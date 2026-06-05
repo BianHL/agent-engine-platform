@@ -129,12 +129,7 @@ class TestWebhookDelivery:
         mock_response = MagicMock()
         mock_response.status_code = 200
 
-        mock_client = AsyncMock()
-        mock_client.post = AsyncMock(return_value=mock_response)
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=None)
-
-        with patch("app.core.webhook_dispatcher.httpx.AsyncClient", return_value=mock_client):
+        with patch("app.core.webhook_dispatcher.safe_request", new_callable=AsyncMock, return_value=mock_response):
             with patch("app.core.webhook_dispatcher.asyncio.sleep", new_callable=AsyncMock):
                 await deliver_webhook(mock_webhook, mock_event, mock_db)
 
@@ -166,17 +161,12 @@ class TestWebhookDelivery:
         mock_response = MagicMock()
         mock_response.status_code = 500
 
-        mock_client = AsyncMock()
-        mock_client.post = AsyncMock(return_value=mock_response)
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=None)
-
-        with patch("app.core.webhook_dispatcher.httpx.AsyncClient", return_value=mock_client):
+        with patch("app.core.webhook_dispatcher.safe_request", new_callable=AsyncMock, return_value=mock_response) as mock_safe:
             with patch("app.core.webhook_dispatcher.asyncio.sleep", new_callable=AsyncMock):
                 await deliver_webhook(mock_webhook, mock_event, mock_db)
 
         # Should have been called 1 (initial) + 3 (retries) = 4 times
-        assert mock_client.post.call_count == 4
+        assert mock_safe.call_count == 4
         assert mock_event.status == "failed"
         assert mock_event.response_status == 500
 
@@ -199,16 +189,11 @@ class TestWebhookDelivery:
 
         mock_db = AsyncMock()
 
-        mock_client = AsyncMock()
-        mock_client.post = AsyncMock(side_effect=ConnectionError("refused"))
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=None)
-
-        with patch("app.core.webhook_dispatcher.httpx.AsyncClient", return_value=mock_client):
+        with patch("app.core.webhook_dispatcher.safe_request", new_callable=AsyncMock, side_effect=ConnectionError("refused")) as mock_safe:
             with patch("app.core.webhook_dispatcher.asyncio.sleep", new_callable=AsyncMock):
                 await deliver_webhook(mock_webhook, mock_event, mock_db)
 
-        assert mock_client.post.call_count == 4
+        assert mock_safe.call_count == 4
         assert mock_event.status == "failed"
 
     @pytest.mark.asyncio
@@ -235,17 +220,12 @@ class TestWebhookDelivery:
         success_response = MagicMock()
         success_response.status_code = 200
 
-        mock_client = AsyncMock()
-        mock_client.post = AsyncMock(side_effect=[fail_response, success_response])
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=None)
-
-        with patch("app.core.webhook_dispatcher.httpx.AsyncClient", return_value=mock_client):
+        with patch("app.core.webhook_dispatcher.safe_request", new_callable=AsyncMock, side_effect=[fail_response, success_response]) as mock_safe:
             with patch("app.core.webhook_dispatcher.asyncio.sleep", new_callable=AsyncMock):
                 await deliver_webhook(mock_webhook, mock_event, mock_db)
 
         assert mock_event.status == "delivered"
-        assert mock_client.post.call_count == 2
+        assert mock_safe.call_count == 2
 
     @pytest.mark.asyncio
     async def test_signature_header_present(self):
@@ -269,18 +249,13 @@ class TestWebhookDelivery:
         mock_response = MagicMock()
         mock_response.status_code = 200
 
-        mock_client = AsyncMock()
-        mock_client.post = AsyncMock(return_value=mock_response)
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=None)
-
-        with patch("app.core.webhook_dispatcher.httpx.AsyncClient", return_value=mock_client):
+        with patch("app.core.webhook_dispatcher.safe_request", new_callable=AsyncMock, return_value=mock_response) as mock_safe:
             with patch("app.core.webhook_dispatcher.asyncio.sleep", new_callable=AsyncMock):
                 await deliver_webhook(mock_webhook, mock_event, mock_db)
 
-        # Check that post was called with the signature header
-        call_args = mock_client.post.call_args
-        headers = call_args[1].get("headers", {})
+        # Check that safe_request was called with the signature header
+        call_args = mock_safe.call_args
+        headers = call_args.kwargs.get("headers", {})
         assert "X-Webhook-Signature" in headers
         assert headers["X-Webhook-Signature"].startswith("sha256=")
 
@@ -306,17 +281,12 @@ class TestWebhookDelivery:
         mock_response = MagicMock()
         mock_response.status_code = 200
 
-        mock_client = AsyncMock()
-        mock_client.post = AsyncMock(return_value=mock_response)
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=None)
-
-        with patch("app.core.webhook_dispatcher.httpx.AsyncClient", return_value=mock_client):
+        with patch("app.core.webhook_dispatcher.safe_request", new_callable=AsyncMock, return_value=mock_response) as mock_safe:
             with patch("app.core.webhook_dispatcher.asyncio.sleep", new_callable=AsyncMock):
                 await deliver_webhook(mock_webhook, mock_event, mock_db)
 
-        call_args = mock_client.post.call_args
-        headers = call_args[1].get("headers", {})
+        call_args = mock_safe.call_args
+        headers = call_args.kwargs.get("headers", {})
         assert "X-Webhook-Signature" not in headers
 
 
@@ -333,6 +303,7 @@ class TestDispatchRouting:
         mock_webhook.events = ["agent.created", "agent.deleted"]
 
         mock_session = AsyncMock()
+        mock_session.add = MagicMock()  # db.add is sync in SQLAlchemy
         mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = [mock_webhook]
         mock_session.execute = AsyncMock(return_value=mock_result)
@@ -377,6 +348,7 @@ class TestDispatchRouting:
         mock_webhook.events = []  # subscribe to all
 
         mock_session = AsyncMock()
+        mock_session.add = MagicMock()  # db.add is sync in SQLAlchemy
         mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = [mock_webhook]
         mock_session.execute = AsyncMock(return_value=mock_result)

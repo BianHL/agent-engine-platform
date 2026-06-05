@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import os
 import uuid
 from pathlib import Path
@@ -11,18 +12,25 @@ from sse_starlette.sse import EventSourceResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import get_current_user
+from app.core.rbac import require_permission
 from app.core.database import async_session, get_db
 from app.engines.safety_engine.safety import SafetyAction, SafetyEngine, SafetyPolicy
 from app.models.base import AgentModel, ConversationModel, MessageModel
 from app.schemas.api import ChatCompletionResponse
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/chat", tags=["chat"])
+
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
 
 
 class ChatRequest(BaseModel):
     agent_id: str
-    messages: list[dict]
+    messages: list[ChatMessage]
     conversation_id: str | None = None
     stream: bool = False
 
@@ -35,8 +43,8 @@ async def _get_agent(db: AsyncSession, agent_id: str, tenant_id: str) -> AgentMo
     agent = result.scalar_one_or_none()
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
-    if agent.status not in ("published", "draft"):
-        raise HTTPException(status_code=400, detail="Agent is not available for chat")
+    if agent.status != "published":
+        raise HTTPException(status_code=400, detail="Agent is not published")
     return agent
 
 
@@ -47,18 +55,46 @@ def _build_system_prompt(agent: AgentModel) -> str:
     return "\n\n".join(parts) if parts else "You are a helpful assistant."
 
 
+def _get_llm_adapter(request: Request, agent: AgentModel):
+    """Get LLM adapter - from app state or agent config."""
+    # Try app-level adapter first
+    adapter = getattr(request.app.state, "llm_adapter", None)
+    if adapter:
+        return adapter
+
+    # Try to create adapter from agent's model provider config
+    from app.engines.model_engine.llm.openai import OpenAIAdapter
+    from app.engines.model_engine.llm.anthropic import AnthropicAdapter
+    from app.engines.model_engine.llm.custom_openai import CustomOpenAIAdapter
+    from app.engines.model_engine.llm.ollama import OllamaAdapter
+
+    provider = agent.model_provider or ""
+    config = agent.model_config or {}
+    adapter_map = {
+        "openai": OpenAIAdapter,
+        "anthropic": AnthropicAdapter,
+        "custom_openai": CustomOpenAIAdapter,
+        "ollama": OllamaAdapter,
+    }
+    adapter_cls = adapter_map.get(provider)
+    if adapter_cls:
+        return adapter_cls(config)
+
+    return None
+
+
 @router.post("/completions", response_model=ChatCompletionResponse)
 async def chat_completions(
     request: Request,
     body: ChatRequest,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("chat", "create"))):
     """Non-streaming chat completion."""
     agent = await _get_agent(db, body.agent_id, user["tenant_id"])
 
     # Safety check on last user message
     safety = SafetyEngine(SafetyPolicy(**(agent.safety_config or {})))
-    last_msg = body.messages[-1]["content"] if body.messages else ""
+    last_msg = body.messages[-1].content if body.messages else ""
     safety_result = await safety.check_input(last_msg)
     if not safety_result.safe:
         raise HTTPException(status_code=400, detail="Content blocked by safety filter")
@@ -66,7 +102,7 @@ async def chat_completions(
     # Build messages with system prompt
     system_prompt = _build_system_prompt(agent)
     llm_messages = [{"role": "system", "content": system_prompt}]
-    llm_messages.extend(body.messages)
+    llm_messages.extend([m.model_dump() for m in body.messages])
 
     # Knowledge retrieval: if agent has knowledge bases, retrieve relevant chunks
     citations = []
@@ -88,18 +124,16 @@ async def chat_completions(
             if citations:
                 context_text = "\n\n".join([f"[Source {i+1}] {c['content']}" for i, c in enumerate(citations)])
                 llm_messages[0]["content"] += f"\n\nRelevant knowledge:\n{context_text}"
-        except Exception:
-            pass  # Retrieval is optional; don't block chat on failure
+        except Exception as e:
+            logger.warning("Knowledge retrieval failed: %s", e)
 
-    # Get LLM adapter from app state
-    llm_adapter = getattr(request.app.state, "llm_adapter", None)
+    # Get LLM adapter
+    llm_adapter = _get_llm_adapter(request, agent)
     if not llm_adapter:
-        # Fallback: return a placeholder when no adapter configured
-        return {
-            "content": f"[No LLM adapter configured] Agent '{agent.name}' received: {last_msg}",
-            "model": agent.model_name or "none",
-            "usage": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0},
-        }
+        raise HTTPException(
+            status_code=503,
+            detail=f"No LLM adapter available for provider '{agent.model_provider}'. Configure a model provider in settings.",
+        )
 
     response = await llm_adapter.chat(
         messages=llm_messages,
@@ -122,6 +156,15 @@ async def chat_completions(
         await db.flush()
         conv_id = conv.id
     else:
+        # Verify conversation belongs to current tenant
+        from sqlalchemy import select as sa_select
+        existing = (await db.execute(
+            sa_select(ConversationModel).where(
+                ConversationModel.id == body.conversation_id,
+                ConversationModel.tenant_id == user["tenant_id"],
+            ))).scalar_one_or_none()
+        if not existing:
+            raise HTTPException(status_code=404, detail="Conversation not found")
         conv_id = body.conversation_id
 
     # Save messages
@@ -143,13 +186,13 @@ async def chat_stream(
     request: Request,
     body: ChatRequest,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("chat", "create"))):
     """SSE streaming chat."""
     agent = await _get_agent(db, body.agent_id, user["tenant_id"])
 
     # Safety check on last user message
     safety = SafetyEngine(SafetyPolicy(**(agent.safety_config or {})))
-    last_msg = body.messages[-1]["content"] if body.messages else ""
+    last_msg = body.messages[-1].content if body.messages else ""
     safety_result = await safety.check_input(last_msg)
     if not safety_result.safe:
         async def error_generator():
@@ -162,7 +205,7 @@ async def chat_stream(
     # Build messages
     system_prompt = _build_system_prompt(agent)
     llm_messages = [{"role": "system", "content": system_prompt}]
-    llm_messages.extend(body.messages)
+    llm_messages.extend([m.model_dump() for m in body.messages])
 
     # Create/update conversation
     if not body.conversation_id:
@@ -175,43 +218,47 @@ async def chat_stream(
         await db.flush()
         conv_id = conv.id
     else:
+        # Verify conversation belongs to current tenant
+        from sqlalchemy import select as sa_select
+        existing = (await db.execute(
+            sa_select(ConversationModel).where(
+                ConversationModel.id == body.conversation_id,
+                ConversationModel.tenant_id == user["tenant_id"],
+            ))).scalar_one_or_none()
+        if not existing:
+            raise HTTPException(status_code=404, detail="Conversation not found")
         conv_id = body.conversation_id
-
     db.add(MessageModel(conversation_id=conv_id, tenant_id=user["tenant_id"], role="user", content=last_msg))
     await db.flush()
 
-    llm_adapter = getattr(request.app.state, "llm_adapter", None)
+    llm_adapter = _get_llm_adapter(request, agent)
+    if not llm_adapter:
+        raise HTTPException(
+            status_code=503,
+            detail=f"No LLM adapter available for provider '{agent.model_provider}'. Configure a model provider in settings.",
+        )
 
     async def event_generator():
         async with async_session() as db:
             full_response = []
-            if not llm_adapter:
-                placeholder = f"[No LLM adapter configured] Agent '{agent.name}' received: {last_msg}"
-                for chunk in placeholder.split():
+            try:
+                async for chunk in llm_adapter.chat_stream(
+                    messages=llm_messages,
+                    model=agent.model_name or "",
+                    temperature=agent.model_config.get("temperature", 0.7),
+                    max_tokens=agent.model_config.get("max_tokens", 2000),
+                ):
                     yield {
                         "event": "message",
-                        "data": json.dumps({"content": chunk + " ", "done": False}),
+                        "data": json.dumps({"content": chunk.content, "done": False}),
                     }
-                    full_response.append(chunk)
-                    await asyncio.sleep(0.05)
-            else:
-                try:
-                    async for chunk in llm_adapter.chat_stream(
-                        messages=llm_messages,
-                        model=agent.model_name or "",
-                        temperature=agent.model_config.get("temperature", 0.7),
-                        max_tokens=agent.model_config.get("max_tokens", 2000)):
-                        yield {
-                            "event": "message",
-                            "data": json.dumps({"content": chunk.content, "done": False}),
-                        }
-                        full_response.append(chunk.content)
-                except Exception as e:
-                    yield {
-                        "event": "error",
-                        "data": json.dumps({"error": str(e)}),
-                    }
-                    return
+                    full_response.append(chunk.content)
+            except Exception as e:
+                yield {
+                    "event": "error",
+                    "data": json.dumps({"error": str(e)}),
+                }
+                return
 
             # Save assistant message
             response_text = "".join(full_response)
@@ -227,7 +274,6 @@ async def chat_stream(
 
     return EventSourceResponse(event_generator())
 
-
 @router.post("/upload")
 async def chat_with_file(
     request: Request,
@@ -236,7 +282,7 @@ async def chat_with_file(
     file: UploadFile = File(...),
     conversation_id: Optional[str] = Form(None),
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("chat", "create"))):
     """Chat with file attachment (image/document)."""
     agent = await _get_agent(db, agent_id, user["tenant_id"])
 
@@ -265,14 +311,12 @@ async def chat_with_file(
     llm_messages = [{"role": "system", "content": system_prompt}]
     llm_messages.append({"role": "user", "content": full_message})
 
-    llm_adapter = getattr(request.app.state, "llm_adapter", None)
+    llm_adapter = _get_llm_adapter(request, agent)
     if not llm_adapter:
-        return {
-            "content": f"[No LLM adapter configured] Agent '{agent.name}' received: {full_message}",
-            "model": agent.model_name or "none",
-            "usage": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0},
-            "file": {"id": file_id, "filename": filename, "size": len(content)},
-        }
+        raise HTTPException(
+            status_code=503,
+            detail=f"No LLM adapter available for provider '{agent.model_provider}'. Configure a model provider in settings.",
+        )
 
     response = await llm_adapter.chat(
         messages=llm_messages,
@@ -292,13 +336,24 @@ async def chat_with_file(
         db.add(conv)
         await db.flush()
         conversation_id = conv.id
+    else:
+        # Verify conversation belongs to current tenant
+        from sqlalchemy import select as sa_select
+        existing = (await db.execute(
+            sa_select(ConversationModel).where(
+                ConversationModel.id == conversation_id,
+                ConversationModel.tenant_id == user["tenant_id"],
+            ))).scalar_one_or_none()
+        if not existing:
+            raise HTTPException(status_code=404, detail="Conversation not found")
 
     db.add(MessageModel(
         conversation_id=conversation_id,
+        tenant_id=user["tenant_id"],
         role="user",
         content=full_message,
-        metadata={"file": {"id": file_id, "filename": filename, "size": len(content)}}))
-    db.add(MessageModel(conversation_id=conversation_id, role="assistant", content=content_text))
+        meta_info={"file": {"id": file_id, "filename": filename, "size": len(content)}}))
+    db.add(MessageModel(conversation_id=conversation_id, tenant_id=user["tenant_id"], role="assistant", content=content_text))
     await db.flush()
 
     return {

@@ -2,7 +2,7 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,10 +22,15 @@ async def get_usage_summary(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(get_current_user)):
     """Get usage summary for the current tenant."""
-    tracker = CostTracker(db)
-    start = datetime.fromisoformat(start_date) if start_date else None
-    end = datetime.fromisoformat(end_date) if end_date else None
-    return await tracker.get_usage(user["tenant_id"], start, end)
+    try:
+        tracker = CostTracker(db)
+        start = datetime.fromisoformat(start_date) if start_date else None
+        end = datetime.fromisoformat(end_date) if end_date else None
+        return await tracker.get_usage(user["tenant_id"], start, end)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get usage summary: {str(e)}")
 
 
 @router.get("/daily")
@@ -34,34 +39,39 @@ async def get_daily_usage(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(get_current_user)):
     """Get daily usage breakdown."""
-    from datetime import timedelta
-    now = datetime.now(timezone.utc)
-    start = now - timedelta(days=days)
+    try:
+        from datetime import timedelta
+        now = datetime.now(timezone.utc)
+        start = now - timedelta(days=days)
 
-    stmt = select(
-        func.date(UsageLogModel.created_at).label("date"),
-        func.sum(UsageLogModel.input_tokens).label("input_tokens"),
-        func.sum(UsageLogModel.output_tokens).label("output_tokens"),
-        func.sum(UsageLogModel.cost).label("cost"),
-        func.count(UsageLogModel.id).label("requests")).where(
-        UsageLogModel.tenant_id == user["tenant_id"],
-        UsageLogModel.created_at >= start).group_by(
-        func.date(UsageLogModel.created_at)
-    ).order_by(
-        func.date(UsageLogModel.created_at)
-    )
+        stmt = select(
+            func.date(UsageLogModel.created_at).label("date"),
+            func.sum(UsageLogModel.input_tokens).label("input_tokens"),
+            func.sum(UsageLogModel.output_tokens).label("output_tokens"),
+            func.sum(UsageLogModel.cost).label("cost"),
+            func.count(UsageLogModel.id).label("requests")).where(
+            UsageLogModel.tenant_id == user["tenant_id"],
+            UsageLogModel.created_at >= start).group_by(
+            func.date(UsageLogModel.created_at)
+        ).order_by(
+            func.date(UsageLogModel.created_at)
+        )
 
-    result = await db.execute(stmt)
-    return [
-        {
-            "date": str(row.date),
-            "input_tokens": row.input_tokens or 0,
-            "output_tokens": row.output_tokens or 0,
-            "cost": round(row.cost or 0.0, 6),
-            "requests": row.requests or 0,
-        }
-        for row in result.all()
-    ]
+        result = await db.execute(stmt)
+        return [
+            {
+                "date": str(row.date),
+                "input_tokens": row.input_tokens or 0,
+                "output_tokens": row.output_tokens or 0,
+                "cost": round(row.cost or 0.0, 6),
+                "requests": row.requests or 0,
+            }
+            for row in result.all()
+        ]
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get daily usage: {str(e)}")
 
 
 @router.get("/models")
@@ -69,26 +79,31 @@ async def get_model_usage(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(get_current_user)):
     """Get usage breakdown by model."""
-    stmt = select(
-        UsageLogModel.model_name,
-        UsageLogModel.model_provider,
-        func.sum(UsageLogModel.input_tokens).label("input_tokens"),
-        func.sum(UsageLogModel.output_tokens).label("output_tokens"),
-        func.sum(UsageLogModel.cost).label("cost"),
-        func.count(UsageLogModel.id).label("requests")).where(
-        UsageLogModel.tenant_id == user["tenant_id"]).group_by(
-        UsageLogModel.model_name,
-        UsageLogModel.model_provider)
+    try:
+        stmt = select(
+            UsageLogModel.model_name,
+            UsageLogModel.model_provider,
+            func.sum(UsageLogModel.input_tokens).label("input_tokens"),
+            func.sum(UsageLogModel.output_tokens).label("output_tokens"),
+            func.sum(UsageLogModel.cost).label("cost"),
+            func.count(UsageLogModel.id).label("requests")).where(
+            UsageLogModel.tenant_id == user["tenant_id"]).group_by(
+            UsageLogModel.model_name,
+            UsageLogModel.model_provider)
 
-    result = await db.execute(stmt)
-    return [
-        {
-            "model_name": row.model_name,
-            "provider": row.model_provider,
-            "input_tokens": row.input_tokens or 0,
-            "output_tokens": row.output_tokens or 0,
-            "cost": round(row.cost or 0.0, 6),
-            "requests": row.requests or 0,
-        }
-        for row in result.all()
-    ]
+        result = await db.execute(stmt)
+        return [
+            {
+                "model_name": row.model_name,
+                "provider": row.model_provider,
+                "input_tokens": row.input_tokens or 0,
+                "output_tokens": row.output_tokens or 0,
+                "cost": round(row.cost or 0.0, 6),
+                "requests": row.requests or 0,
+            }
+            for row in result.all()
+        ]
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get model usage: {str(e)}")

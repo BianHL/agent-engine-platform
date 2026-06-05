@@ -1,7 +1,7 @@
 """Agent related models."""
 from datetime import UTC, datetime
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, Numeric, String, Text
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base, EnterpriseMixin, OptimisticLockMixin, generate_uuid
@@ -32,7 +32,7 @@ class AgentModel(Base, EnterpriseMixin, OptimisticLockMixin):
     # Statistics (denormalized for performance)
     total_conversations = Column(Integer, default=0)
     total_messages = Column(Integer, default=0)
-    avg_rating = Column(Float, default=0.0)
+    avg_rating = Column(Numeric(3, 2), default=0.0)
     last_used_at = Column(DateTime, nullable=True)
 
     # relationships
@@ -40,6 +40,7 @@ class AgentModel(Base, EnterpriseMixin, OptimisticLockMixin):
     conversations = relationship("ConversationModel", back_populates="agent", cascade="all, delete-orphan")
     versions = relationship("AgentVersionModel", back_populates="agent", cascade="all, delete-orphan")
     ab_tests = relationship("ABTestModel", back_populates="agent", cascade="all, delete-orphan")
+    handoffs = relationship("HandoffModel", foreign_keys="HandoffModel.source_agent_id", cascade="all, delete-orphan")
 
 
 class AgentVersionModel(Base):

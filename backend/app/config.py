@@ -1,11 +1,13 @@
+from typing import Literal
+
 from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     # ---- General ----
-    ENVIRONMENT: str = "development"  # development | staging | production
-    LOG_LEVEL: str = "INFO"  # DEBUG | INFO | WARNING | ERROR
+    ENVIRONMENT: Literal["development", "staging", "production"] = "development"
+    LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     APP_PORT: int = 8000
     FRONTEND_URL: str = "http://localhost:3000"
 
@@ -102,6 +104,11 @@ class Settings(BaseSettings):
         if not self.CELERY_RESULT_BACKEND:
             self.CELERY_RESULT_BACKEND = self._redis_url_for_db(3)
 
+        if self.DB_POOL_SIZE < 1:
+            raise ValueError("DB_POOL_SIZE must be >= 1")
+        if self.DB_MAX_OVERFLOW < 0:
+            raise ValueError("DB_MAX_OVERFLOW must be >= 0")
+
         if self.ENVIRONMENT == "production":
             insecure = "change-me-in-production"
             for name in ("SECRET_KEY", "ENCRYPTION_KEY"):
@@ -110,6 +117,8 @@ class Settings(BaseSettings):
                     raise ValueError(f"{name} must be changed from default in production")
                 if len(val) < 16:
                     raise ValueError(f"{name} must be >= 16 chars in production")
+            if not self.NEO4J_PASSWORD:
+                raise ValueError("NEO4J_PASSWORD must be set in production")
         return self
 
     def _redis_url_for_db(self, db: int) -> str:

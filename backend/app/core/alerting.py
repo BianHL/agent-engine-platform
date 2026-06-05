@@ -1,5 +1,6 @@
 """Alert management for monitoring thresholds."""
 import asyncio
+import inspect
 import logging
 import time
 from enum import Enum
@@ -83,7 +84,7 @@ class AlertManager:
                 )
                 for handler in self._handlers:
                     try:
-                        if asyncio.iscoroutinefunction(handler):
+                        if inspect.iscoroutinefunction(handler):
                             await handler(alert)
                         else:
                             handler(alert)

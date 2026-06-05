@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user
+from app.core.rbac import require_permission
 from app.core.database import get_db
 from app.schemas.api import MemoryContextResponse, MemorySearchRequest, StatusResponse
 
@@ -45,7 +46,7 @@ async def get_memory_context(
 async def search_memory(
     body: MemorySearchRequest,
     request: Request,
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("memory", "create"))):
     """Search long-term memory for relevant memories."""
     engine = _get_memory_engine(request)
     if not engine.long_term:
@@ -64,7 +65,7 @@ async def search_memory(
 async def clear_memory(
     conversation_id: str,
     request: Request,
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("memory", "delete"))):
     """Clear short-term memory for a conversation session."""
     engine = _get_memory_engine(request)
     await engine.clear_session(conversation_id)

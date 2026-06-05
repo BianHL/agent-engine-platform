@@ -1,4 +1,6 @@
 """Marketplace API routes."""
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -6,6 +8,8 @@ from app.core.auth import get_current_user
 from app.core.database import get_db
 from app.core.rbac import require_permission
 from app.platform.marketplace_service.marketplace_service import MarketplaceService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/marketplace", tags=["marketplace"])
 
@@ -24,17 +28,23 @@ async def list_items(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(get_current_user)):
     """List marketplace items with search, filter, and sort."""
-    svc = MarketplaceService(db)
-    return await svc.list_items(
-        tenant_id=user["tenant_id"],
-        user_id=user["id"],
-        keyword=keyword,
-        category=category,
-        tags=tags,
-        asset_type=asset_type,
-        sort_by=sort_by,
-        page=page,
-        size=size)
+    try:
+        svc = MarketplaceService(db)
+        return await svc.list_items(
+            tenant_id=user["tenant_id"],
+            user_id=user["id"],
+            keyword=keyword,
+            category=category,
+            tags=tags,
+            asset_type=asset_type,
+            sort_by=sort_by,
+            page=page,
+            size=size)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in list_items: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/items/{item_id}")
@@ -43,11 +53,17 @@ async def get_item(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(get_current_user)):
     """Get marketplace item detail."""
-    svc = MarketplaceService(db)
-    item = await svc.get_item(item_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Item not found")
-    return item
+    try:
+        svc = MarketplaceService(db)
+        item = await svc.get_item(item_id)
+        if not item:
+            raise HTTPException(status_code=404, detail="Item not found")
+        return item
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in get_item: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/featured")
@@ -56,8 +72,14 @@ async def get_featured(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(get_current_user)):
     """Get featured items."""
-    svc = MarketplaceService(db)
-    return await svc.get_featured(limit=limit)
+    try:
+        svc = MarketplaceService(db)
+        return await svc.get_featured(limit=limit)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in get_featured: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/hot")
@@ -66,8 +88,14 @@ async def get_hot(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(get_current_user)):
     """Get hot/trending items."""
-    svc = MarketplaceService(db)
-    return await svc.get_hot(limit=limit)
+    try:
+        svc = MarketplaceService(db)
+        return await svc.get_hot(limit=limit)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in get_hot: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/categories")
@@ -75,8 +103,14 @@ async def get_categories(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(get_current_user)):
     """Get all categories."""
-    svc = MarketplaceService(db)
-    return await svc.get_categories()
+    try:
+        svc = MarketplaceService(db)
+        return await svc.get_categories()
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in get_categories: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ========== Whitebox ==========
@@ -87,18 +121,24 @@ async def get_whitebox_view(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(get_current_user)):
     """Get white-box visualization data for an item."""
-    from sqlalchemy import select
-    from app.models.marketplace import MarketplaceItem as MarketplaceItemModel
+    try:
+        from sqlalchemy import select
+        from app.models.marketplace import MarketplaceItem as MarketplaceItemModel
 
-    q = select(MarketplaceItemModel).where(MarketplaceItemModel.id == item_id)
-    result = await db.execute(q)
-    item = result.scalar_one_or_none()
-    if not item:
-        raise HTTPException(status_code=404, detail="Item not found")
-    config = item.config_snapshot or {}
-    svc = MarketplaceService(db)
-    nodes, edges = svc.generate_whitebox_flow(config)
-    return {"nodes": nodes, "edges": edges}
+        q = select(MarketplaceItemModel).where(MarketplaceItemModel.id == item_id)
+        result = await db.execute(q)
+        item = result.scalar_one_or_none()
+        if not item:
+            raise HTTPException(status_code=404, detail="Item not found")
+        config = item.config_snapshot or {}
+        svc = MarketplaceService(db)
+        nodes, edges = svc.generate_whitebox_flow(config)
+        return {"nodes": nodes, "edges": edges}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in get_whitebox_view: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ========== Trial ==========
@@ -107,16 +147,22 @@ async def get_whitebox_view(
 async def create_trial(
     item_id: str,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("marketplace", "create"))):
     """Record a trial use of an item (increments usage_count)."""
-    svc = MarketplaceService(db)
-    item = await svc.get_item(item_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Item not found")
-    if item["status"] not in ("published", "approved"):
-        raise HTTPException(status_code=400, detail="Item not available for trial")
-    await svc.record_trial(item_id)
-    return {"status": "ok", "asset_type": item["asset_type"], "asset_id": item["asset_id"]}
+    try:
+        svc = MarketplaceService(db)
+        item = await svc.get_item(item_id)
+        if not item:
+            raise HTTPException(status_code=404, detail="Item not found")
+        if item["status"] not in ("published", "approved"):
+            raise HTTPException(status_code=400, detail="Item not available for trial")
+        await svc.record_trial(item_id)
+        return {"status": "ok", "asset_type": item["asset_type"], "asset_id": item["asset_id"]}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in create_trial: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ========== Rating ==========
@@ -126,10 +172,10 @@ async def create_rating(
     item_id: str,
     body: dict,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("marketplace", "create"))):
     """Create or update rating for an item."""
-    svc = MarketplaceService(db)
     try:
+        svc = MarketplaceService(db)
         return await svc.create_rating(
             item_id=item_id,
             user_id=user["id"],
@@ -138,6 +184,11 @@ async def create_rating(
             comment=body.get("comment"))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in create_rating: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/items/{item_id}/ratings")
@@ -148,8 +199,14 @@ async def get_ratings(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(get_current_user)):
     """Get ratings for an item."""
-    svc = MarketplaceService(db)
-    return await svc.get_item_ratings(item_id, page=page, size=size)
+    try:
+        svc = MarketplaceService(db)
+        return await svc.get_item_ratings(item_id, page=page, size=size)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in get_ratings: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/items/{item_id}/rating/me")
@@ -158,11 +215,17 @@ async def get_my_rating(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(get_current_user)):
     """Get current user's rating for an item."""
-    svc = MarketplaceService(db)
-    rating = await svc.get_my_rating(item_id, user["id"])
-    if not rating:
-        raise HTTPException(status_code=404, detail="No rating found")
-    return rating
+    try:
+        svc = MarketplaceService(db)
+        rating = await svc.get_my_rating(item_id, user["id"])
+        if not rating:
+            raise HTTPException(status_code=404, detail="No rating found")
+        return rating
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in get_my_rating: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ========== Clone ==========
@@ -173,14 +236,19 @@ async def clone_item(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_permission("marketplace", "submit"))):
     """Clone an item to current user's tenant."""
-    svc = MarketplaceService(db)
     try:
+        svc = MarketplaceService(db)
         return await svc.clone_item(
             item_id=item_id,
             cloner_id=user["id"],
             target_tenant_id=user["tenant_id"])
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in clone_item: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ========== Submission (Contributor permission required) ==========
@@ -191,14 +259,19 @@ async def submit_for_review(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_permission("marketplace", "submit"))):
     """Submit an asset for marketplace review."""
-    svc = MarketplaceService(db)
     try:
+        svc = MarketplaceService(db)
         return await svc.submit_for_review(
             tenant_id=user["tenant_id"],
             user_id=user["id"],
             data=body)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in submit_for_review: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/submissions")
@@ -208,25 +281,36 @@ async def get_my_submissions(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(get_current_user)):
     """Get my submission history."""
-    svc = MarketplaceService(db)
-    return await svc.get_my_submissions(
-        tenant_id=user["tenant_id"],
-        user_id=user["id"],
-        page=page,
-        size=size)
+    try:
+        svc = MarketplaceService(db)
+        return await svc.get_my_submissions(
+            tenant_id=user["tenant_id"],
+            user_id=user["id"],
+            page=page,
+            size=size)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in get_my_submissions: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/submissions/{item_id}/cancel")
 async def cancel_submission(
     item_id: str,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("marketplace", "submit"))):
     """Cancel a pending submission."""
-    svc = MarketplaceService(db)
     try:
+        svc = MarketplaceService(db)
         return await svc.cancel_submission(item_id, user["tenant_id"], user["id"])
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in cancel_submission: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ========== Review management (Admin permission required) ==========
@@ -238,9 +322,15 @@ async def list_pending_reviews(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_permission("marketplace", "review"))):
     """List items pending review."""
-    svc = MarketplaceService(db)
-    return await svc.list_pending_reviews(
-        tenant_id=user["tenant_id"], page=page, size=size)
+    try:
+        svc = MarketplaceService(db)
+        return await svc.list_pending_reviews(
+            tenant_id=user["tenant_id"], page=page, size=size)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in list_pending_reviews: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/admin/reviews/pending-promotion")
@@ -250,9 +340,15 @@ async def list_pending_promotion_reviews(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_permission("marketplace", "review"))):
     """List items pending cross-level promotion review."""
-    svc = MarketplaceService(db)
-    return await svc.list_pending_promotion_reviews(
-        tenant_id=user["tenant_id"], page=page, size=size)
+    try:
+        svc = MarketplaceService(db)
+        return await svc.list_pending_promotion_reviews(
+            tenant_id=user["tenant_id"], page=page, size=size)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in list_pending_promotion_reviews: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/admin/reviews/{item_id}/approve")
@@ -262,8 +358,8 @@ async def approve_review(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_permission("marketplace", "review"))):
     """Approve a marketplace item."""
-    svc = MarketplaceService(db)
     try:
+        svc = MarketplaceService(db)
         return await svc.approve_review(
             item_id=item_id,
             tenant_id=user["tenant_id"],
@@ -271,6 +367,11 @@ async def approve_review(
             comment=body.get("comment", ""))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in approve_review: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/admin/reviews/{item_id}/reject")
@@ -280,8 +381,8 @@ async def reject_review(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_permission("marketplace", "review"))):
     """Reject a marketplace item."""
-    svc = MarketplaceService(db)
     try:
+        svc = MarketplaceService(db)
         return await svc.reject_review(
             item_id=item_id,
             tenant_id=user["tenant_id"],
@@ -289,6 +390,11 @@ async def reject_review(
             comment=body.get("comment", ""))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in reject_review: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ========== Asset management (Admin permission required) ==========
@@ -300,11 +406,16 @@ async def freeze_item(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_permission("marketplace", "manage"))):
     """Freeze an item."""
-    svc = MarketplaceService(db)
     try:
+        svc = MarketplaceService(db)
         return await svc.freeze_item(item_id, user["tenant_id"], body.get("reason", ""))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in freeze_item: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/admin/items/{item_id}/unfreeze")
@@ -313,11 +424,16 @@ async def unfreeze_item(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_permission("marketplace", "manage"))):
     """Unfreeze an item."""
-    svc = MarketplaceService(db)
     try:
+        svc = MarketplaceService(db)
         return await svc.unfreeze_item(item_id, user["tenant_id"])
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in unfreeze_item: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/admin/items/{item_id}/takedown")
@@ -327,11 +443,16 @@ async def takedown_item(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_permission("marketplace", "manage"))):
     """Force takedown an item."""
-    svc = MarketplaceService(db)
     try:
+        svc = MarketplaceService(db)
         return await svc.takedown_item(item_id, user["tenant_id"], body.get("reason", ""))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in takedown_item: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/admin/items/{item_id}/promote")
@@ -341,12 +462,17 @@ async def promote_item(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_permission("marketplace", "promote"))):
     """Promote an item to higher visibility level."""
-    svc = MarketplaceService(db)
     try:
+        svc = MarketplaceService(db)
         return await svc.promote_item(
             item_id, user["tenant_id"], body.get("target_level", "tenant"))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in promote_item: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/admin/items/{item_id}/feature")
@@ -355,11 +481,16 @@ async def set_featured(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_permission("marketplace", "manage"))):
     """Set item as featured."""
-    svc = MarketplaceService(db)
     try:
+        svc = MarketplaceService(db)
         return await svc.toggle_featured(item_id, user["tenant_id"], True)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in set_featured: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.delete("/admin/items/{item_id}/feature")
@@ -368,11 +499,16 @@ async def unset_featured(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_permission("marketplace", "manage"))):
     """Remove item from featured."""
-    svc = MarketplaceService(db)
     try:
+        svc = MarketplaceService(db)
         return await svc.toggle_featured(item_id, user["tenant_id"], False)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in unset_featured: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/admin/items")
@@ -384,13 +520,19 @@ async def list_admin_items(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_permission("marketplace", "manage"))):
     """List all items for admin (all statuses)."""
-    svc = MarketplaceService(db)
-    return await svc.list_admin_items(
-        tenant_id=user["tenant_id"],
-        status=status_filter,
-        keyword=keyword,
-        page=page,
-        size=size)
+    try:
+        svc = MarketplaceService(db)
+        return await svc.list_admin_items(
+            tenant_id=user["tenant_id"],
+            status=status_filter,
+            keyword=keyword,
+            page=page,
+            size=size)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in list_admin_items: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ========== Changelog ==========
@@ -403,8 +545,14 @@ async def get_changelog(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(get_current_user)):
     """Get changelog for a marketplace item."""
-    svc = MarketplaceService(db)
-    return await svc.get_changelog(item_id, page=page, size=size)
+    try:
+        svc = MarketplaceService(db)
+        return await svc.get_changelog(item_id, page=page, size=size)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in get_changelog: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ========== Stats dashboard (Admin permission required) ==========
@@ -414,8 +562,14 @@ async def get_stats(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_permission("marketplace", "manage"))):
     """Get marketplace statistics."""
-    svc = MarketplaceService(db)
-    return await svc.get_stats(user["tenant_id"])
+    try:
+        svc = MarketplaceService(db)
+        return await svc.get_stats(user["tenant_id"])
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in get_stats: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/admin/stats/trends")
@@ -424,5 +578,11 @@ async def get_stats_trends(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_permission("marketplace", "manage"))):
     """Get marketplace trend data."""
-    svc = MarketplaceService(db)
-    return await svc.get_stats_trends(user["tenant_id"], days=days)
+    try:
+        svc = MarketplaceService(db)
+        return await svc.get_stats_trends(user["tenant_id"], days=days)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in get_stats_trends: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))

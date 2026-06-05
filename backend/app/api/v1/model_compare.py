@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.core.auth import get_current_user
+from app.core.rbac import require_permission
 
 router = APIRouter(prefix="/models", tags=["models"])
 
@@ -76,7 +77,7 @@ async def _call_model(
 @router.post("/compare", response_model=CompareResponse)
 async def compare_models(
     request: CompareRequest,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(require_permission("model", "create"))
 ):
     """并行调用多个模型进行对比"""
     start_time = time.time()

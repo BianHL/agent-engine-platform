@@ -6,7 +6,7 @@ from typing import Any
 
 import httpx
 
-from app.core.ssrf import is_safe_url
+from app.core.ssrf import safe_request
 from app.engines.tool_engine.registry import ToolDef
 
 logger = logging.getLogger(__name__)
@@ -36,24 +36,27 @@ async def _execute(params: dict[str, Any]) -> dict[str, Any]:
     body = params.get("body")
     timeout = params.get("timeout", 30)
 
-    safe, reason = is_safe_url(url)
-    if not safe:
-        return {"error": f"URL blocked: {reason}"}
-
     try:
-        async with httpx.AsyncClient(timeout=timeout, follow_redirects=False) as client:
-            kwargs: dict[str, Any] = {"method": method, "url": url, "headers": headers}
-            if body and method in ("POST", "PUT", "PATCH"):
-                kwargs["json"] = body
+        kwargs: dict[str, Any] = {}
+        if body and method in ("POST", "PUT", "PATCH"):
+            kwargs["json"] = body
 
-            resp = await client.request(**kwargs)
-            content = resp.text[:50000]
+        resp = await safe_request(
+            method, url,
+            timeout=timeout,
+            follow_redirects=False,
+            headers=headers,
+            **kwargs,
+        )
+        content = resp.text[:50000]
 
-            return {
-                "status_code": resp.status_code,
-                "headers": dict(resp.headers),
-                "body": content,
-            }
+        return {
+            "status_code": resp.status_code,
+            "headers": dict(resp.headers),
+            "body": content,
+        }
+    except ValueError as e:
+        return {"error": str(e)}
     except httpx.TimeoutException:
         return {"error": f"Request timed out after {timeout}s"}
     except Exception as e:

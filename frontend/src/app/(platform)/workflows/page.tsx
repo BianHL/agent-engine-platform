@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Table, Space, Tag, Modal, Form, Input, message } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, PlayCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, PlayCircleOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 
@@ -18,15 +18,21 @@ export default function WorkflowsPage() {
   const router = useRouter();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [form] = Form.useForm();
 
   const fetchWorkflows = async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await api.get('/workflows');
       setWorkflows(res?.items || res?.data?.items || []);
-    } catch {
+      setError(null);
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to load workflows';
+      setError(msg);
+      message.error(msg);
       setWorkflows([]);
     } finally {
       setLoading(false);
@@ -52,9 +58,13 @@ export default function WorkflowsPage() {
     Modal.confirm({
       title: 'Delete workflow?',
       onOk: async () => {
-        await api.delete(`/workflows/${id}`);
-        message.success('Deleted');
-        fetchWorkflows();
+        try {
+          await api.delete(`/workflows/${id}`);
+          message.success('Deleted');
+          fetchWorkflows();
+        } catch (err: any) {
+          message.error(err?.message || 'Failed to delete workflow');
+        }
       },
     });
   };
@@ -85,7 +95,20 @@ export default function WorkflowsPage() {
         title="Workflows"
         extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>Create Workflow</Button>}
       >
-        <Table columns={columns} dataSource={workflows} loading={loading} rowKey="id" />
+        {error && !loading ? (
+          <div style={{ textAlign: 'center', padding: '48px 0' }}>
+            <p style={{ color: 'var(--ae-muted)', marginBottom: 16 }}>{error}</p>
+            <Button icon={<ReloadOutlined />} onClick={fetchWorkflows}>
+              Retry
+            </Button>
+          </div>
+        ) : !loading && workflows.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--ae-muted)' }}>
+            No workflows yet. Click &quot;Create Workflow&quot; to get started.
+          </div>
+        ) : (
+          <Table columns={columns} dataSource={workflows} loading={loading} rowKey="id" />
+        )}
       </Card>
 
       <Modal title="Create Workflow" open={modalOpen} onOk={handleCreate} onCancel={() => setModalOpen(false)}>

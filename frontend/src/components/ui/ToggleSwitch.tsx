@@ -9,6 +9,13 @@ interface ToggleSwitchProps {
 }
 
 export default function ToggleSwitch({ checked, onChange, label, className = '' }: ToggleSwitchProps) {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      onChange(!checked);
+    }
+  };
+
   return (
     <label
       className={className}
@@ -20,7 +27,12 @@ export default function ToggleSwitch({ checked, onChange, label, className = '' 
       }}
     >
       <div
+        role="switch"
+        aria-checked={checked}
+        tabIndex={0}
         onClick={() => onChange(!checked)}
+        onKeyDown={handleKeyDown}
+        className="ae-toggle-track"
         style={{
           width: 44,
           height: 24,
@@ -28,8 +40,9 @@ export default function ToggleSwitch({ checked, onChange, label, className = '' 
           background: checked ? 'var(--ae-accent-olive)' : 'var(--ae-line)',
           position: 'relative',
           cursor: 'pointer',
-          transition: 'background 200ms ease',
+          transition: 'background 200ms ease, box-shadow 200ms ease',
           flexShrink: 0,
+          outline: 'none',
         }}
       >
         <div
@@ -49,6 +62,11 @@ export default function ToggleSwitch({ checked, onChange, label, className = '' 
       {label && (
         <span style={{ fontSize: 13, color: 'var(--ae-muted)' }}>{label}</span>
       )}
+      <style jsx>{`
+        .ae-toggle-track:focus-visible {
+          box-shadow: 0 0 0 3px rgba(122, 138, 106, 0.3);
+        }
+      `}</style>
     </label>
   );
 }

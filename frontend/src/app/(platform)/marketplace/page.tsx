@@ -2,12 +2,12 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import {
   Card, Row, Col, Button, Tag, Typography, Spin, Input, Space,
-  Badge, Empty, Rate,
+  Badge, Empty, Rate, message,
 } from 'antd';
 import {
   FireOutlined, StarOutlined, SearchOutlined, ShopOutlined,
   AppstoreAddOutlined, ThunderboltOutlined, DatabaseOutlined,
-  BranchesOutlined,
+  BranchesOutlined, ReloadOutlined,
 } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -40,6 +40,7 @@ export default function MarketplacePage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [sortBy, setSortBy] = useState('latest');
   const [page, setPage] = useState(1);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -57,13 +58,15 @@ export default function MarketplacePage() {
       ]);
       setFeatured(f);
       setHot(h);
-    } catch {
-      // ignore
+    } catch (err: any) {
+      // Featured/hot sections fail silently -- main content still works
+      console.warn('Failed to load featured/hot items:', err?.message);
     }
   };
 
   const loadItems = async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await api.listMarketplaceItems({
         keyword: searchKeyword,
@@ -74,8 +77,11 @@ export default function MarketplacePage() {
       });
       setItems(data.items || []);
       setTotal(data.total || 0);
-    } catch {
-      // ignore
+      setError(null);
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to load marketplace items';
+      setError(msg);
+      message.error(msg);
     } finally {
       setLoading(false);
     }
@@ -305,6 +311,13 @@ export default function MarketplacePage() {
       {/* Items Grid */}
       {loading ? (
         <Spin size="large" style={{ display: 'block', margin: '100px auto' }} />
+      ) : error ? (
+        <div style={{ textAlign: 'center', padding: '48px 0' }}>
+          <p style={{ color: 'var(--ae-muted)', marginBottom: 16 }}>{error}</p>
+          <Button icon={<ReloadOutlined />} onClick={() => { loadItems(); loadData(); }}>
+            Retry
+          </Button>
+        </div>
       ) : items.length === 0 ? (
         <Empty description="No assets found" />
       ) : (

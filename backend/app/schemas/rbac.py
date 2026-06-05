@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class CreateRoleRequest(BaseModel):
@@ -38,8 +38,7 @@ class RoleResponse(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UpdateRolePermissionsRequest(BaseModel):
@@ -60,8 +59,7 @@ class PermissionResponse(BaseModel):
     description: str = ""
     created_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserRoleRequest(BaseModel):
@@ -77,5 +75,4 @@ class UserRoleResponse(BaseModel):
     created_by: Optional[str] = None
     created_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

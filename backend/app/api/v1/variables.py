@@ -8,9 +8,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete, and_
-from datetime import datetime
+from datetime import UTC, datetime
 
 from app.core.auth import get_current_user
+from app.core.rbac import require_permission
 from app.core.database import get_db
 
 router = APIRouter(prefix="/variables", tags=["variables"])
@@ -49,7 +50,7 @@ _variables_store: Dict[str, Dict[str, Any]] = {}
 @router.post("", response_model=VariableResponse)
 async def create_variable(
     request: VariableCreate,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(require_permission("variable", "create"))
 ):
     """创建变量"""
     var_key = f"{request.scope}:{current_user['id']}:{request.key}"
@@ -57,7 +58,7 @@ async def create_variable(
     if var_key in _variables_store:
         raise HTTPException(status_code=400, detail="Variable already exists")
 
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(UTC).replace(tzinfo=None).isoformat()
     _variables_store[var_key] = {
         "id": var_key,
         "key": request.key,
@@ -117,7 +118,7 @@ async def update_variable(
     key: str,
     request: VariableUpdate,
     scope: str = Query("global", pattern="^(session|user|global)$"),
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(require_permission("variable", "update"))
 ):
     """更新变量"""
     var_key = f"{scope}:{current_user['id']}:{key}"
@@ -129,7 +130,7 @@ async def update_variable(
     var["value"] = request.value
     if request.description is not None:
         var["description"] = request.description
-    var["updated_at"] = datetime.utcnow().isoformat()
+    var["updated_at"] = datetime.now(UTC).replace(tzinfo=None).isoformat()
 
     return VariableResponse(**var)
 
@@ -138,7 +139,7 @@ async def update_variable(
 async def delete_variable(
     key: str,
     scope: str = Query("global", pattern="^(session|user|global)$"),
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(require_permission("variable", "delete"))
 ):
     """删除变量"""
     var_key = f"{scope}:{current_user['id']}:{key}"

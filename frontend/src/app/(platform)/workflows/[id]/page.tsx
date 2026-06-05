@@ -338,7 +338,7 @@ export default function WorkflowEditorPage({ params }: { params: { id: string } 
                 </>
               )}
 
-              {selectedNode.type === 'loop' && (
+              {selectedNode.type === 'iteration' && (
                 <>
                   <Form.Item name="max_iterations" label="Max Iterations">
                     <InputNumber min={1} max={100} style={{ width: '100%' }} />

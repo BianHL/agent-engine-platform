@@ -109,33 +109,28 @@ class TestWebParser:
     """Test web parser URL validation and content extraction."""
 
     def test_validate_url_blocks_private_ips(self):
-        from app.engines.knowledge_engine.parser.web_parser import WebParser
-        parser = WebParser()
-        assert not parser._validate_url("http://192.168.1.1/secret")
-        assert not parser._validate_url("http://10.0.0.1/secret")
-        assert not parser._validate_url("http://127.0.0.1/secret")
+        from app.core.ssrf import is_safe_url
+        assert not is_safe_url("http://192.168.1.1/secret")[0]
+        assert not is_safe_url("http://10.0.0.1/secret")[0]
+        assert not is_safe_url("http://127.0.0.1/secret")[0]
 
     def test_validate_url_blocks_localhost(self):
-        from app.engines.knowledge_engine.parser.web_parser import WebParser
-        parser = WebParser()
-        assert not parser._validate_url("http://localhost/secret")
+        from app.core.ssrf import is_safe_url
+        assert not is_safe_url("http://localhost/secret")[0]
 
     def test_validate_url_blocks_internal_domains(self):
-        from app.engines.knowledge_engine.parser.web_parser import WebParser
-        parser = WebParser()
-        assert not parser._validate_url("http://metadata.google.internal/")
+        from app.core.ssrf import is_safe_url
+        assert not is_safe_url("http://metadata.google.internal/")[0]
 
     def test_validate_url_allows_public(self):
-        from app.engines.knowledge_engine.parser.web_parser import WebParser
-        parser = WebParser()
-        assert parser._validate_url("https://example.com/page")
-        assert parser._validate_url("http://example.com/page")
+        from app.core.ssrf import is_safe_url
+        assert is_safe_url("https://example.com/page")[0]
+        assert is_safe_url("http://example.com/page")[0]
 
     def test_validate_url_blocks_non_http(self):
-        from app.engines.knowledge_engine.parser.web_parser import WebParser
-        parser = WebParser()
-        assert not parser._validate_url("ftp://example.com/file")
-        assert not parser._validate_url("file:///etc/passwd")
+        from app.core.ssrf import is_safe_url
+        assert not is_safe_url("ftp://example.com/file")[0]
+        assert not is_safe_url("file:///etc/passwd")[0]
 
     def test_extract_content_strips_scripts(self):
         from app.engines.knowledge_engine.parser.web_parser import WebParser

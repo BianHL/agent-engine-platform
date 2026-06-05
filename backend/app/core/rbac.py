@@ -32,6 +32,7 @@ PERMISSIONS: dict[str, list[str]] = {
     "workflow": ["create", "read", "update", "delete", "execute"],
     "tool": ["create", "read", "update", "delete", "execute"],
     "conversation": ["create", "read", "delete"],
+    "chat": ["create", "read"],
     "user": ["create", "read", "update", "delete"],
     "tenant": ["read", "update", "manage_features", "manage_quota"],
     "audit": ["read", "export"],
@@ -39,6 +40,17 @@ PERMISSIONS: dict[str, list[str]] = {
     "webhook": ["create", "read", "update", "delete"],
     "role": ["create", "read", "update", "delete"],
     "marketplace": ["read", "submit", "review", "manage", "promote"],
+    "model": ["create", "read", "update", "delete"],
+    "memory": ["create", "read", "delete"],
+    "evaluation": ["create", "read", "update", "delete"],
+    "feedback": ["create", "read"],
+    "annotation": ["create", "read", "update", "delete"],
+    "variable": ["create", "read", "update", "delete"],
+    "task": ["create", "read", "update", "delete"],
+    "multi_agent": ["create", "read", "update", "delete", "execute"],
+    "plugin": ["create", "read", "update", "delete"],
+    "compliance": ["read", "export"],
+    "data_import": ["create", "read"],
 }
 
 # ---------------------------------------------------------------------------

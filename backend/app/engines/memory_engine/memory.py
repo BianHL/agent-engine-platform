@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import math
 import re
 import time
@@ -7,6 +8,8 @@ import json
 from collections import Counter
 from typing import Optional
 from datetime import datetime, timedelta
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -130,8 +133,8 @@ class LongTermMemory:
                     except Exception:
                         # Skip malformed entries without crashing
                         continue
-        except Exception:
-            pass  # Non-critical, don't fail the conversation
+        except Exception as e:
+            logger.warning("Long-term memory extract_and_store failed for tenant %s user %s: %s", tenant_id, user_id, e)
 
     async def search(self, query: str, tenant_id: str, user_id: str, top_k: int = 5) -> list[dict]:
         """基于嵌入向量的语义搜索，使用余弦相似度检索长期记忆"""
@@ -154,7 +157,8 @@ class LongTermMemory:
             # 按相似度分数排序（降序）
             filtered.sort(key=lambda r: r.get("score", 0.0), reverse=True)
             return filtered
-        except Exception:
+        except Exception as e:
+            logger.warning("Long-term memory search failed for tenant %s user %s: %s", tenant_id, user_id, e)
             return []
 
 
@@ -181,8 +185,8 @@ class WorkingMemory:
             )
             key = f"memory:working:{session_id}"
             await self.redis.set(key, response.content, ex=7200)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Working memory update failed for session %s: %s", session_id, e)
 
     async def get_summary(self, session_id: str) -> str:
         key = f"memory:working:{session_id}"
@@ -417,14 +421,18 @@ class MemoryEngine:
         await self.short_term.add_message(session_id, role, content)
 
         messages = await self.short_term.get_messages(session_id)
+
+        # Run long-term extraction, working memory compression, and summarization
+        # independently so one failure doesn't block the others.
+        tasks = []
         if len(messages) >= 5 and self.long_term:
-            await self.long_term.extract_and_store(session_id, tenant_id, user_id, messages, self.llm_adapter)
-
+            tasks.append(self.long_term.extract_and_store(session_id, tenant_id, user_id, messages, self.llm_adapter))
         if len(messages) >= 10:
-            await self.working.compress(session_id, messages, self.llm_adapter)
+            tasks.append(self.working.compress(session_id, messages, self.llm_adapter))
+        tasks.append(self.summarization.maybe_summarize(session_id, messages))
 
-        # 短期记忆超限时触发摘要压缩
-        await self.summarization.maybe_summarize(session_id, messages)
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
 
     async def get_context(self, session_id: str, tenant_id: str, user_id: str, query: str = "") -> dict:
         short_term = await self.short_term.get_messages(session_id)
@@ -452,4 +460,12 @@ class MemoryEngine:
         }
 
     async def clear_session(self, session_id: str):
+        """Clear all memory tiers for a session."""
         await self.short_term.clear(session_id)
+        await self.working.compress(session_id, [], None)  # clears via overwrite
+        # Clear working memory key directly
+        key = f"memory:working:{session_id}"
+        await self.short_term.redis.delete(key)
+        # Clear summary key
+        summary_key = f"memory:summary:{session_id}"
+        await self.short_term.redis.delete(summary_key)

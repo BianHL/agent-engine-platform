@@ -25,7 +25,8 @@ router = APIRouter(prefix="/tools", tags=["tools"])
 # ---------------------------------------------------------------------------
 
 @router.get("/builtin")
-async def list_builtin_tools():
+async def list_builtin_tools(
+    user: dict = Depends(get_current_user)):
     """List all registered built-in tools."""
     registry = ToolRegistry()
     tools = registry.list_tools(tool_type="builtin")

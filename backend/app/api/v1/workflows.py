@@ -279,7 +279,7 @@ async def get_execution(
 async def resume_execution(
     execution_id: str,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("workflow", "execute"))):
     """Resume a paused or failed workflow execution."""
     svc = WorkflowExecutionService(db)
     try:
@@ -339,7 +339,7 @@ async def rollback_workflow_version(
     workflow_id: str,
     version: int,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("workflow", "update"))):
     """Rollback a workflow to a previous version.
 
     Snapshots the current config, then restores the target version's config.

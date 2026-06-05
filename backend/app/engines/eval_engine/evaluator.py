@@ -8,9 +8,12 @@ Metrics:
 - tool_call_accuracy: were tool calls correct?
 """
 import json
+import logging
 import re
 from dataclasses import dataclass, field
 from typing import Any, Optional, Protocol
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -77,8 +80,8 @@ async def faithfulness(answer: str, contexts: list[str], llm: Optional[LLMAdapte
             data = json.loads(content)
             supported = len(data.get("supported", []))
             return min(supported / len(claims), 1.0)
-        except (json.JSONDecodeError, AttributeError, ZeroDivisionError):
-            pass
+        except (json.JSONDecodeError, AttributeError, ZeroDivisionError) as e:
+            logger.debug("LLM faithfulness parse failed, falling back to heuristic: %s", e)
 
     # Fallback: simple keyword overlap heuristic
     supported = 0
@@ -109,8 +112,8 @@ async def answer_relevancy(answer: str, question: str, llm: Optional[LLMAdapter]
             data = json.loads(content)
             score = float(data.get("score", 0.0))
             return max(0.0, min(score, 1.0))
-        except (json.JSONDecodeError, AttributeError, ValueError):
-            pass
+        except (json.JSONDecodeError, AttributeError, ValueError) as e:
+            logger.debug("LLM answer_relevancy parse failed, falling back to heuristic: %s", e)
 
     # Fallback: keyword overlap
     q_words = set(_normalize(question).split())
@@ -147,8 +150,8 @@ async def context_precision(
             content = resp.content if hasattr(resp, "content") else str(resp)
             data = json.loads(content)
             return float(data.get("precision", 0.0))
-        except (json.JSONDecodeError, AttributeError, ValueError):
-            pass
+        except (json.JSONDecodeError, AttributeError, ValueError) as e:
+            logger.debug("LLM context_precision parse failed, falling back to heuristic: %s", e)
 
     # Fallback: check if contexts with keyword overlap appear earlier
     gt_lower = _normalize(ground_truth)
@@ -201,8 +204,8 @@ async def context_recall(
             data = json.loads(content)
             covered = len(data.get("covered", []))
             return min(covered / len(gt_statements), 1.0)
-        except (json.JSONDecodeError, AttributeError, ZeroDivisionError):
-            pass
+        except (json.JSONDecodeError, AttributeError, ZeroDivisionError) as e:
+            logger.debug("LLM context_recall parse failed, falling back to heuristic: %s", e)
 
     # Fallback: keyword overlap per statement
     context_lower = _normalize(context_text)
@@ -239,8 +242,8 @@ async def tool_call_accuracy(
             content = resp.content if hasattr(resp, "content") else str(resp)
             data = json.loads(content)
             return float(data.get("score", 0.0))
-        except (json.JSONDecodeError, AttributeError, ValueError):
-            pass
+        except (json.JSONDecodeError, AttributeError, ValueError) as e:
+            logger.debug("LLM tool_call_accuracy parse failed, falling back to heuristic: %s", e)
 
     # Fallback: exact match on function name + args
     matched = 0

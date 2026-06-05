@@ -209,14 +209,23 @@ export default function WorkflowCanvas({
   // MiniMap node color
   const minimapNodeColor = useCallback((node: Node) => {
     const colors: Record<string, string> = {
+      start: '#52c41a',
+      end: '#ff4d4f',
       llm: '#1890ff',
+      knowledge: '#9254de',
+      question_classifier: '#eb2f96',
+      parameter_extractor: '#fa8c16',
       code: '#eb2f96',
+      template: '#13c2c2',
+      variable: '#2f54eb',
       condition: '#faad14',
       parallel: '#52c41a',
-      loop: '#722ed1',
+      iteration: '#722ed1',
       http: '#13c2c2',
+      tool: '#fa541c',
       human: '#fa541c',
       sub_workflow: '#2f54eb',
+      answer: '#52c41a',
     };
     return colors[node.type || ''] || '#666';
   }, []);

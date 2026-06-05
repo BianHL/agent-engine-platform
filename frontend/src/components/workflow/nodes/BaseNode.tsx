@@ -36,6 +36,54 @@ export default function BaseNode({ data, selected }: NodeProps) {
     setSelectedNode(nodeId);
   };
 
+  // Render output variable preview based on node type
+  const renderOutputPreview = (type: string, config: Record<string, unknown>) => {
+    let outputs: string[] = [];
+    switch (type) {
+      case 'start':
+        outputs = ['input variables'];
+        break;
+      case 'llm':
+        outputs = ['response'];
+        break;
+      case 'knowledge':
+        outputs = ['documents'];
+        break;
+      case 'code':
+        outputs = (config.output_variables as string[]) || ['result'];
+        break;
+      case 'template':
+        outputs = ['rendered'];
+        break;
+      case 'http':
+        outputs = ['response', 'status'];
+        break;
+      case 'tool':
+        outputs = ['result'];
+        break;
+      case 'question_classifier':
+        outputs = ['class_name', 'confidence'];
+        break;
+      case 'parameter_extractor':
+        outputs = ((config.parameters as Array<{name: string}>) || []).map(p => p.name);
+        break;
+      case 'condition':
+        outputs = ['true_branch', 'false_branch'];
+        break;
+      case 'answer':
+        outputs = ['answer'];
+        break;
+      default:
+        return null;
+    }
+    if (outputs.length === 0) return null;
+    return (
+      <div style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace' }}>
+        → {outputs.join(', ')}
+      </div>
+    );
+  };
+
   return (
     <div
       onClick={handleClick}
@@ -117,10 +165,14 @@ export default function BaseNode({ data, selected }: NodeProps) {
           fontSize: '11px',
           color: '#666',
           lineHeight: '1.4',
+          marginBottom: '6px',
         }}
       >
         {nodeConfig.description}
       </div>
+
+      {/* Output Variables Preview */}
+      {nodeData.config && renderOutputPreview(nodeType, nodeData.config)}
 
       {/* Output Handle (Right) */}
       <Handle
@@ -166,7 +218,7 @@ export default function BaseNode({ data, selected }: NodeProps) {
       )}
 
       {/* Loop back handle */}
-      {nodeType === 'loop' && (
+      {nodeType === 'iteration' && (
         <Handle
           type="source"
           position={Position.Bottom}

@@ -40,7 +40,7 @@ def check_budget_alerts(tenant_id: str, monthly_budget: float):
 
             return {"status": "ok", "total_cost": total_cost, "budget": monthly_budget}
 
-    return asyncio.get_event_loop().run_until_complete(_check())
+    return asyncio.run(_check())
 
 
 @celery_app.task(name="app.tasks.model_tasks.check_model_health")
@@ -70,7 +70,7 @@ def check_model_health():
         logger.info(f"Health check completed: {len(results)} models checked")
         return {"checked": len(results), "results": results}
 
-    return asyncio.get_event_loop().run_until_complete(_check())
+    return asyncio.run(_check())
 
 
 async def _probe_model(db, config, provider) -> dict:
@@ -125,7 +125,7 @@ def _build_adapter(provider):
             from app.engines.model_engine.router import ModelRouter
             return None  # 由 router 统一管理，这里只做健康标记
     except ImportError:
-        pass
+        logger.debug("ModelRouter not available for provider %s", provider.provider_type)
     return None
 
 
@@ -203,4 +203,4 @@ def aggregate_usage_daily():
             logger.info(f"Aggregated usage for {upserted} tenant-model pairs")
             return {"upserted": upserted, "date": yesterday.isoformat()}
 
-    return asyncio.get_event_loop().run_until_complete(_aggregate())
+    return asyncio.run(_aggregate())

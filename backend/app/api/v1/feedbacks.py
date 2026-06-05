@@ -5,6 +5,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
+from app.core.rbac import require_permission
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user
@@ -27,14 +28,14 @@ router = APIRouter(prefix="/feedbacks", tags=["feedbacks"])
 async def create_feedback(
     body: CreateFeedbackRequest,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("feedback", "create")),
 ):
     """Create feedback for a message (positive/negative rating + comment)."""
     message_id = body.message_id
     rating = body.rating
 
     # Verify message exists
-    stmt = select(MessageModel).where(MessageModel.id == message_id)
+    stmt = select(MessageModel).where(MessageModel.id == message_id, MessageModel.tenant_id == user.get("tenant_id"))
     result = await db.execute(stmt)
     if not result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Message not found")
@@ -70,7 +71,7 @@ async def update_feedback(
     feedback_id: str,
     body: UpdateFeedbackRequest,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("feedback", "update")),
 ):
     """Update an existing feedback."""
     stmt = select(MessageFeedbackModel).where(
@@ -104,6 +105,9 @@ async def get_feedback_stats(
         func.count().filter(MessageFeedbackModel.rating == "negative").label("negative"),
     ).join(
         MessageModel, MessageFeedbackModel.message_id == MessageModel.id
+    ).where(
+        MessageModel.agent_id == agent_id,
+        MessageModel.tenant_id == user.get("tenant_id"),
     )
     result = await db.execute(stmt)
     row = result.one()
@@ -124,14 +128,14 @@ async def get_feedback_stats(
 async def create_annotation(
     body: CreateAnnotationRequest,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("annotation", "create")),
 ):
     """Create an annotation (corrected answer) for a message."""
     message_id = body.message_id
     corrected_answer = body.corrected_answer
 
     # Verify message exists
-    stmt = select(MessageModel).where(MessageModel.id == message_id)
+    stmt = select(MessageModel).where(MessageModel.id == message_id, MessageModel.tenant_id == user.get("tenant_id"))
     result = await db.execute(stmt)
     if not result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Message not found")

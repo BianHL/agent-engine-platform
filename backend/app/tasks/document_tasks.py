@@ -1,3 +1,5 @@
+import asyncio
+import os
 """Document processing tasks with retry and progress tracking."""
 import time
 import traceback
@@ -79,7 +81,6 @@ def process_document(self, document_id: str, file_path: str, file_type: str,
 
     self.update_state(state="PROGRESS", meta={"progress": 0.7, "stage": "indexing"})
 
-    # Index chunks (vector store integration would go here)
     chunk_data = [
         {
             "id": f"{document_id}_{i}",
@@ -93,6 +94,64 @@ def process_document(self, document_id: str, file_path: str, file_type: str,
         }
         for i, chunk in enumerate(chunks)
     ]
+
+    # Index chunks into vector store and search engine
+    loop = asyncio.new_event_loop()
+    try:
+        # Get embedding adapter from config
+        from app.config import settings
+        from app.engines.model_engine.embedding.openai_embedding import OpenAIEmbeddingAdapter
+
+        embedding_config = {
+            "api_key": os.environ.get("OPENAI_API_KEY", ""),
+            "api_base": "https://api.openai.com/v1",
+        }
+        embedding_adapter = OpenAIEmbeddingAdapter(embedding_config)
+
+        # Embed chunks in batches
+        batch_size = 100
+        all_embeddings = []
+        for batch_start in range(0, len(chunk_data), batch_size):
+            batch = chunk_data[batch_start:batch_start + batch_size]
+            texts = [c["content"] for c in batch]
+            embeddings = loop.run_until_complete(
+                embedding_adapter.embed(texts, model="text-embedding-3-small")
+            )
+            all_embeddings.extend(embeddings)
+
+        # Index into Milvus
+        if all_embeddings and knowledge_base_id:
+            from app.engines.knowledge_engine.storage.vector.milvus_store import MilvusVectorStore
+            vector_store = MilvusVectorStore(host=settings.MILVUS_HOST, port=settings.MILVUS_PORT)
+            collection_name = f"{settings.MILVUS_COLLECTION_PREFIX}kb_{knowledge_base_id}"
+            dim = len(all_embeddings[0])
+            loop.run_until_complete(vector_store.create_collection(collection_name, dim))
+            loop.run_until_complete(vector_store.insert(
+                collection_name=collection_name,
+                ids=[c["id"] for c in chunk_data],
+                contents=[c["content"] for c in chunk_data],
+                metadatas=[c["metadata"] for c in chunk_data],
+                embeddings=all_embeddings,
+                dim=dim,
+            ))
+            logger.info(f"Indexed {len(chunk_data)} chunks into Milvus collection {collection_name}")
+
+        # Index into Elasticsearch
+        if knowledge_base_id:
+            try:
+                from app.engines.knowledge_engine.storage.search.es_store import ESStore
+                es_store = ESStore(hosts=settings.ES_HOSTS)
+                index_name = f"{settings.ES_INDEX_PREFIX}kb_{knowledge_base_id}"
+                loop.run_until_complete(es_store.index_chunks(index_name, chunk_data))
+                logger.info(f"Indexed {len(chunk_data)} chunks into ES index {index_name}")
+            except Exception as e:
+                logger.warning(f"ES indexing failed (non-critical): {e}")
+
+    except Exception as e:
+        logger.error(f"Vector indexing failed: {e}")
+        # Don't fail the whole task - chunks are still created
+    finally:
+        loop.close()
 
     self.update_state(state="PROGRESS", meta={"progress": 1.0, "stage": "complete"})
 

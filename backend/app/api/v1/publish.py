@@ -101,7 +101,7 @@ async def update_channel(
     channel_id: str,
     body: UpdateChannelRequest,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("agent", "update"))):
     stmt = select(PublishChannelModel).where(
         PublishChannelModel.id == channel_id,
         PublishChannelModel.tenant_id == user["tenant_id"])
@@ -125,7 +125,7 @@ async def update_channel(
 async def delete_channel(
     channel_id: str,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("agent", "delete"))):
     stmt = select(PublishChannelModel).where(
         PublishChannelModel.id == channel_id,
         PublishChannelModel.tenant_id == user["tenant_id"])
@@ -143,7 +143,7 @@ async def delete_channel(
 async def get_channel_stats(
     channel_id: str,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user)):
+    user: dict = Depends(require_permission("agent", "delete"))):
     stmt = select(PublishChannelModel).where(
         PublishChannelModel.id == channel_id,
         PublishChannelModel.tenant_id == user["tenant_id"])

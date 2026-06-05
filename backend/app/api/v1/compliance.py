@@ -12,6 +12,7 @@ from sqlalchemy import select, func, and_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user, get_tenant_id
+from app.core.rbac import require_permission
 from app.core.database import get_db
 from app.models.agent import AgentModel
 from app.models.audit import OperationLogModel
@@ -87,7 +88,7 @@ class AuditReport(BaseModel):
 async def generate_compliance_report(
     request: ComplianceReportRequest,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_permission("compliance", "create")),
     tenant_id: str = Depends(get_tenant_id),
 ):
     """Generate a compliance report."""
@@ -97,16 +98,21 @@ async def generate_compliance_report(
 
     report_id = f"report_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}"
 
-    if request.report_type == "security":
-        report_data = await _generate_security_report(db, tenant_id, start_date, end_date)
-    elif request.report_type == "access":
-        report_data = await _generate_access_report(db, tenant_id, start_date, end_date)
-    elif request.report_type == "data":
-        report_data = await _generate_data_report(db, tenant_id, start_date, end_date)
-    elif request.report_type == "audit":
-        report_data = await _generate_audit_report(db, tenant_id, start_date, end_date)
-    else:
-        raise HTTPException(status_code=400, detail=f"Unknown report type: {request.report_type}")
+    try:
+        if request.report_type == "security":
+            report_data = await _generate_security_report(db, tenant_id, start_date, end_date)
+        elif request.report_type == "access":
+            report_data = await _generate_access_report(db, tenant_id, start_date, end_date)
+        elif request.report_type == "data":
+            report_data = await _generate_data_report(db, tenant_id, start_date, end_date)
+        elif request.report_type == "audit":
+            report_data = await _generate_audit_report(db, tenant_id, start_date, end_date)
+        else:
+            raise HTTPException(status_code=400, detail=f"Unknown report type: {request.report_type}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate compliance report: {str(e)}")
 
     return ComplianceReport(
         report_id=report_id,
@@ -130,7 +136,12 @@ async def get_security_report(
     """Get security compliance report."""
     end_date = datetime.now(UTC)
     start_date = end_date - timedelta(days=days)
-    return await _generate_security_report(db, tenant_id, start_date, end_date)
+    try:
+        return await _generate_security_report(db, tenant_id, start_date, end_date)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get security report: {str(e)}")
 
 
 @router.get("/reports/access")
@@ -143,7 +154,12 @@ async def get_access_report(
     """Get access control compliance report."""
     end_date = datetime.now(UTC)
     start_date = end_date - timedelta(days=days)
-    return await _generate_access_report(db, tenant_id, start_date, end_date)
+    try:
+        return await _generate_access_report(db, tenant_id, start_date, end_date)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get access report: {str(e)}")
 
 
 @router.get("/reports/data")
@@ -156,7 +172,12 @@ async def get_data_report(
     """Get data handling compliance report."""
     end_date = datetime.now(UTC)
     start_date = end_date - timedelta(days=days)
-    return await _generate_data_report(db, tenant_id, start_date, end_date)
+    try:
+        return await _generate_data_report(db, tenant_id, start_date, end_date)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get data report: {str(e)}")
 
 
 @router.get("/reports/audit")
@@ -169,7 +190,12 @@ async def get_audit_report(
     """Get audit trail compliance report."""
     end_date = datetime.now(UTC)
     start_date = end_date - timedelta(days=days)
-    return await _generate_audit_report(db, tenant_id, start_date, end_date)
+    try:
+        return await _generate_audit_report(db, tenant_id, start_date, end_date)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get audit report: {str(e)}")
 
 
 @router.get("/score")
@@ -179,23 +205,28 @@ async def get_compliance_score(
     tenant_id: str = Depends(get_tenant_id),
 ):
     """Get overall compliance score."""
-    # Calculate compliance score based on various factors
-    factors = {
-        "authentication": await _check_auth_compliance(db, tenant_id),
-        "authorization": await _check_authz_compliance(db, tenant_id),
-        "data_protection": await _check_data_compliance(db, tenant_id),
-        "audit_logging": await _check_audit_compliance(db, tenant_id),
-        "access_control": await _check_access_compliance(db, tenant_id),
-    }
+    try:
+        # Calculate compliance score based on various factors
+        factors = {
+            "authentication": await _check_auth_compliance(db, tenant_id),
+            "authorization": await _check_authz_compliance(db, tenant_id),
+            "data_protection": await _check_data_compliance(db, tenant_id),
+            "audit_logging": await _check_audit_compliance(db, tenant_id),
+            "access_control": await _check_access_compliance(db, tenant_id),
+        }
 
-    overall_score = sum(factors.values()) / len(factors)
+        overall_score = sum(factors.values()) / len(factors)
 
-    return {
-        "overall_score": round(overall_score, 2),
-        "factors": factors,
-        "grade": _get_compliance_grade(overall_score),
-        "recommendations": _get_compliance_recommendations(factors),
-    }
+        return {
+            "overall_score": round(overall_score, 2),
+            "factors": factors,
+            "grade": _get_compliance_grade(overall_score),
+            "recommendations": _get_compliance_recommendations(factors),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get compliance score: {str(e)}")
 
 
 # ---------------------------------------------------------------------------

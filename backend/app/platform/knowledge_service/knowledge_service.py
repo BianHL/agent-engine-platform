@@ -23,11 +23,6 @@ class KnowledgeBaseService:
 
     async def create(self, tenant_id: str, data: dict) -> dict:
         dimensions = data.get("dimensions", 1536)
-        if self.embedding_adapter and data.get("embedding_model"):
-            try:
-                dimensions = data.get("dimensions", 1536)
-            except Exception:
-                pass
 
         kb_id_prefix = f"tenant_{tenant_id}"
 

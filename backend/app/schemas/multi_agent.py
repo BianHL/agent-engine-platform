@@ -1,8 +1,9 @@
 """Multi-Agent/Crew related schemas."""
 from datetime import datetime
+from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class CreateCrewRequest(BaseModel):
@@ -33,8 +34,7 @@ class CrewResponse(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CrewExecutionResponse(BaseModel):
@@ -51,12 +51,11 @@ class CrewExecutionResponse(BaseModel):
     completed_at: Optional[datetime] = None
     duration_ms: Optional[int] = None
     total_tokens: int = 0
-    total_cost: float = 0.0
+    total_cost: Decimal = Decimal("0")
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ExecuteCrewRequest(BaseModel):
@@ -83,5 +82,4 @@ class HandoffResponse(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

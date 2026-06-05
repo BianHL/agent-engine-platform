@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState, useCallback } from 'react';
 import { Card, Table, Typography, Tag, Tabs, message, Button, Space, Modal, Form, Input, Select, Popconfirm } from 'antd';
-import { PlusOutlined, DeleteOutlined, StarOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined, StarOutlined, ReloadOutlined } from '@ant-design/icons';
 import api from '@/lib/api';
 import { ModelProvider, ModelConfig } from '@/types';
 
@@ -26,6 +26,7 @@ export default function ModelsPage() {
   const [providers, setProviders] = useState<ModelProvider[]>([]);
   const [configs, setConfigs] = useState<ModelConfig[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Provider modal state
   const [providerModalOpen, setProviderModalOpen] = useState(false);
@@ -39,25 +40,35 @@ export default function ModelsPage() {
 
   const fetchData = useCallback(() => {
     setLoading(true);
+    setError(null);
     Promise.all([api.listProviders(), api.listModelConfigs()])
-      .then(([p, c]) => { setProviders(p); setConfigs(c); })
-      .catch(() => message.error('Failed to load'))
+      .then(([p, c]) => { setProviders(p); setConfigs(c); setError(null); })
+      .catch((err) => {
+        const msg = err?.message || 'Failed to load model data';
+        setError(msg);
+        message.error(msg);
+      })
       .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleCreateProvider = async () => {
+    let values;
     try {
-      const values = await providerForm.validateFields();
+      values = await providerForm.validateFields();
+    } catch {
+      return; // Form validation errors shown inline
+    }
+    try {
       setProviderCreating(true);
       await api.createProvider(values);
       message.success('Provider created');
       setProviderModalOpen(false);
       providerForm.resetFields();
       fetchData();
-    } catch {
-      message.error('Failed to create provider');
+    } catch (err: any) {
+      message.error(err?.message || 'Failed to create provider');
     } finally {
       setProviderCreating(false);
     }
@@ -74,16 +85,21 @@ export default function ModelsPage() {
   };
 
   const handleCreateConfig = async () => {
+    let values;
     try {
-      const values = await configForm.validateFields();
+      values = await configForm.validateFields();
+    } catch {
+      return; // Form validation errors shown inline
+    }
+    try {
       setConfigCreating(true);
       await api.createModelConfig(values);
       message.success('Model config created');
       setConfigModalOpen(false);
       configForm.resetFields();
       fetchData();
-    } catch {
-      message.error('Failed to create model config');
+    } catch (err: any) {
+      message.error(err?.message || 'Failed to create model config');
     } finally {
       setConfigCreating(false);
     }
@@ -151,36 +167,45 @@ export default function ModelsPage() {
     <div>
       <Title level={4}>Model Management</Title>
       <Card>
-        <Tabs items={[
-          {
-            key: 'providers',
-            label: 'Providers',
-            children: (
-              <>
-                <div style={{ marginBottom: 16, textAlign: 'right' }}>
-                  <Button type="primary" icon={<PlusOutlined />} onClick={() => setProviderModalOpen(true)}>
-                    Create Provider
-                  </Button>
-                </div>
-                <Table dataSource={providers} columns={providerCols} loading={loading} rowKey="id" />
-              </>
-            ),
-          },
-          {
-            key: 'configs',
-            label: 'Model Configs',
-            children: (
-              <>
-                <div style={{ marginBottom: 16, textAlign: 'right' }}>
-                  <Button type="primary" icon={<PlusOutlined />} onClick={() => setConfigModalOpen(true)}>
-                    Create Model Config
-                  </Button>
-                </div>
-                <Table dataSource={configs} columns={configCols} loading={loading} rowKey="id" />
-              </>
-            ),
-          },
-        ]} />
+        {error && !loading ? (
+          <div style={{ textAlign: 'center', padding: '48px 0' }}>
+            <p style={{ color: 'var(--ae-muted)', marginBottom: 16 }}>{error}</p>
+            <Button icon={<ReloadOutlined />} onClick={fetchData}>
+              Retry
+            </Button>
+          </div>
+        ) : (
+          <Tabs items={[
+            {
+              key: 'providers',
+              label: 'Providers',
+              children: (
+                <>
+                  <div style={{ marginBottom: 16, textAlign: 'right' }}>
+                    <Button type="primary" icon={<PlusOutlined />} onClick={() => setProviderModalOpen(true)}>
+                      Create Provider
+                    </Button>
+                  </div>
+                  <Table dataSource={providers} columns={providerCols} loading={loading} rowKey="id" />
+                </>
+              ),
+            },
+            {
+              key: 'configs',
+              label: 'Model Configs',
+              children: (
+                <>
+                  <div style={{ marginBottom: 16, textAlign: 'right' }}>
+                    <Button type="primary" icon={<PlusOutlined />} onClick={() => setConfigModalOpen(true)}>
+                      Create Model Config
+                    </Button>
+                  </div>
+                  <Table dataSource={configs} columns={configCols} loading={loading} rowKey="id" />
+                </>
+              ),
+            },
+          ]} />
+        )}
       </Card>
 
       {/* Create Provider Modal */}

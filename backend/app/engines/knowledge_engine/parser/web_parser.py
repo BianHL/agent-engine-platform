@@ -11,6 +11,7 @@ from dataclasses import dataclass
 import httpx
 from bs4 import BeautifulSoup
 
+from app.core.ssrf import is_safe_url
 from .base import BaseDocumentParser
 
 
@@ -91,42 +92,12 @@ class WebParser(BaseParser):
                 ))
         return results
 
-    def _validate_url(self, url: str) -> bool:
-        """验证 URL 安全性，防止 SSRF 攻击"""
-        from urllib.parse import urlparse
-        import ipaddress
-
-        try:
-            parsed = urlparse(url)
-            if parsed.scheme not in ("http", "https"):
-                return False
-
-            # 获取主机名
-            hostname = parsed.hostname
-            if not hostname:
-                return False
-
-            # 检查是否为内网 IP
-            try:
-                ip = ipaddress.ip_address(hostname)
-                if ip.is_private or ip.is_loopback or ip.is_link_local:
-                    return False
-            except ValueError:
-                # 不是 IP 地址，检查域名
-                if hostname in ("localhost", "127.0.0.1", "0.0.0.0", "metadata.google.internal"):
-                    return False
-                if hostname.endswith(".internal") or hostname.endswith(".local"):
-                    return False
-
-            return True
-        except Exception:
-            return False
-
     async def _fetch_page(self, url: str) -> WebPage:
         """获取网页内容"""
-        # SSRF 防护
-        if not self._validate_url(url):
-            raise ValueError(f"URL not allowed: {url}")
+        # SSRF 防护 — use shared module for consistent security rules
+        safe, reason = is_safe_url(url)
+        if not safe:
+            raise ValueError(f"URL not allowed: {reason}")
 
         async with httpx.AsyncClient(
             timeout=self.timeout,
@@ -184,8 +155,8 @@ class WebParser(BaseParser):
 
     def _get_timestamp(self) -> str:
         """获取当前时间戳"""
-        from datetime import datetime
-        return datetime.utcnow().isoformat()
+        from datetime import UTC, datetime
+        return datetime.now(UTC).replace(tzinfo=None).isoformat()
 
     async def extract_links(self, url: str) -> List[str]:
         """提取网页中的链接"""

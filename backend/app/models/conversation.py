@@ -1,7 +1,7 @@
 """Conversation and Message models."""
 from datetime import UTC, datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, JSON, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base, generate_uuid
@@ -24,7 +24,7 @@ class ConversationModel(Base):
     message_count = Column(Integer, default=0)
     total_input_tokens = Column(Integer, default=0)
     total_output_tokens = Column(Integer, default=0)
-    total_cost = Column(Float, default=0.0)
+    total_cost = Column(Numeric(10, 6), default=0.0)
     last_message_at = Column(DateTime, nullable=True, index=True)
     last_message_preview = Column(String(200), nullable=True)
     archived_at = Column(DateTime, nullable=True)
@@ -45,7 +45,7 @@ class MessageModel(Base):
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
     conversation_id = Column(String(36), ForeignKey("conversations.id"), index=True, nullable=False)
-    tenant_id = Column(String(36), index=True, nullable=False)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), index=True, nullable=False)
     role = Column(String(20), nullable=False, index=True)
     content = Column(Text, nullable=False)
     input_tokens = Column(Integer, default=0)
@@ -83,6 +83,10 @@ class ConversationVariableModel(Base):
     # relationships
     conversation = relationship("ConversationModel", back_populates="variables")
 
+    __table_args__ = (
+        UniqueConstraint("conversation_id", "key", name="uk_cv"),
+    )
+
 
 class MessageFeedbackModel(Base):
     __tablename__ = "message_feedbacks"
@@ -98,6 +102,10 @@ class MessageFeedbackModel(Base):
 
     # relationships
     message = relationship("MessageModel", back_populates="feedbacks")
+
+    __table_args__ = (
+        UniqueConstraint("message_id", "user_id", name="uk_mf"),
+    )
 
 
 class MessageAnnotationModel(Base):
