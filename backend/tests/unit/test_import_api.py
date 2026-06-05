@@ -29,31 +29,27 @@ class TestWebParser:
 
     def test_validate_url_safe(self):
         """测试安全 URL 验证"""
-        from app.engines.knowledge_engine.parser.web_parser import WebParser
-        parser = WebParser()
-
-        assert parser._validate_url("https://example.com") is True
-        assert parser._validate_url("http://example.com/path") is True
+        from app.core.ssrf import is_safe_url
+        safe, _ = is_safe_url("https://example.com")
+        assert safe is True
+        safe, _ = is_safe_url("http://example.com/path")
+        assert safe is True
 
     def test_validate_url_ssrf_blocked(self):
         """测试 SSRF 防护"""
-        from app.engines.knowledge_engine.parser.web_parser import WebParser
-        parser = WebParser()
-
+        from app.core.ssrf import is_safe_url
         # 内网 IP 应该被阻止
-        assert parser._validate_url("http://127.0.0.1") is False
-        assert parser._validate_url("http://localhost") is False
-        assert parser._validate_url("http://169.254.169.254") is False
-        assert parser._validate_url("http://10.0.0.1") is False
-        assert parser._validate_url("http://192.168.1.1") is False
+        assert not is_safe_url("http://127.0.0.1")[0]
+        assert not is_safe_url("http://localhost")[0]
+        assert not is_safe_url("http://169.254.169.254")[0]
+        assert not is_safe_url("http://10.0.0.1")[0]
+        assert not is_safe_url("http://192.168.1.1")[0]
 
     def test_validate_url_invalid_scheme(self):
         """测试无效协议"""
-        from app.engines.knowledge_engine.parser.web_parser import WebParser
-        parser = WebParser()
-
-        assert parser._validate_url("ftp://example.com") is False
-        assert parser._validate_url("file:///etc/passwd") is False
+        from app.core.ssrf import is_safe_url
+        assert not is_safe_url("ftp://example.com")[0]
+        assert not is_safe_url("file:///etc/passwd")[0]
 
     def test_clean_text(self):
         """测试文本清理"""
@@ -68,11 +64,9 @@ class TestWebParser:
 
     def test_validate_url_internal_domain(self):
         """测试内部域名阻止"""
-        from app.engines.knowledge_engine.parser.web_parser import WebParser
-        parser = WebParser()
-
-        assert parser._validate_url("http://metadata.google.internal") is False
-        assert parser._validate_url("http://test.internal") is False
+        from app.core.ssrf import is_safe_url
+        assert not is_safe_url("http://metadata.google.internal")[0]
+        assert not is_safe_url("http://test.internal")[0]
 
 
 if __name__ == "__main__":

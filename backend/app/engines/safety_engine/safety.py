@@ -1,7 +1,10 @@
+import logging
 import re
 from typing import Optional
 from enum import Enum
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 
 class SafetyAction(str, Enum):
@@ -115,7 +118,8 @@ class SafetyEngine:
                     llm_check = await self._llm_injection_check(text, llm_adapter)
                     if llm_check:
                         issues.append(llm_check)
-                        return SafetyResult(safe=False, issues=issues, action=SafetyAction.BLOCK)
+                        if llm_check.action == SafetyAction.BLOCK:
+                            return SafetyResult(safe=False, issues=issues, action=SafetyAction.BLOCK)
 
             # 2. PII check
             if self.policy.check_pii:
@@ -134,8 +138,7 @@ class SafetyEngine:
             safe = not any(i.action == SafetyAction.BLOCK for i in issues)
             return SafetyResult(safe=safe, issues=issues, filtered_content=filtered if filtered != text else None, action=action)
         except Exception as e:
-            import logging
-            logging.getLogger(__name__).exception("SafetyEngine.check_input failed")
+            logger.exception("SafetyEngine.check_input failed")
             return SafetyResult(
                 safe=False,
                 issues=[SafetyIssue(type="engine_error", detail=f"Safety check failed: {e}", severity="high", action=SafetyAction.WARN)],
@@ -186,8 +189,7 @@ class SafetyEngine:
                 action=action,
             )
         except Exception as e:
-            import logging
-            logging.getLogger(__name__).exception("SafetyEngine.check_output failed")
+            logger.exception("SafetyEngine.check_output failed")
             return SafetyResult(
                 safe=False,
                 issues=[SafetyIssue(type="engine_error", detail=f"Safety check failed: {e}", severity="high", action=SafetyAction.WARN)],
@@ -410,8 +412,14 @@ class SafetyEngine:
                     severity="high",
                     action=SafetyAction.BLOCK
                 )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("LLM input moderation check failed: %s", e)
+            return SafetyIssue(
+                type="safety_check_unavailable",
+                detail="LLM safety check could not be performed",
+                severity="medium",
+                action=SafetyAction.WARN,
+            )
         return None
 
     async def _llm_output_moderation(self, text: str, llm_adapter) -> Optional[SafetyIssue]:
@@ -437,8 +445,14 @@ class SafetyEngine:
                     key=lambda i: ["none", "low", "medium", "high", "critical"].index(i.severity)
                     if i.severity in ("none", "low", "medium", "high", "critical") else 0,
                 )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("LLM output moderation check failed: %s", e)
+            return SafetyIssue(
+                type="safety_check_unavailable",
+                detail="LLM output safety check could not be performed",
+                severity="medium",
+                action=SafetyAction.WARN,
+            )
         return None
 
     def _check_and_mask_pii(self, text: str, full_mask: bool = False) -> tuple[list[SafetyIssue], str]:

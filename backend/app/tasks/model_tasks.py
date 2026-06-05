@@ -125,7 +125,7 @@ def _build_adapter(provider):
             from app.engines.model_engine.router import ModelRouter
             return None  # 由 router 统一管理，这里只做健康标记
     except ImportError:
-        pass
+        logger.debug("ModelRouter not available for provider %s", provider.provider_type)
     return None
 
 

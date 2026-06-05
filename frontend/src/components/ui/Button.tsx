@@ -7,10 +7,13 @@ interface ButtonProps {
   size?: 'sm' | 'md' | 'lg';
   onClick?: () => void;
   disabled?: boolean;
+  loading?: boolean;
   className?: string;
   type?: 'button' | 'submit';
   'aria-label'?: string;
 }
+
+const fontSizeMap = { sm: 12, md: 13, lg: 14 };
 
 export default function Button({
   children,
@@ -18,6 +21,7 @@ export default function Button({
   size = 'md',
   onClick,
   disabled = false,
+  loading = false,
   className = '',
   type = 'button',
   'aria-label': ariaLabel,
@@ -30,10 +34,10 @@ export default function Button({
 
   const variantStyles = {
     primary: {
-      background: 'linear-gradient(135deg, #b8956a, #a08060 52%, #8b9a6d)',
+      background: 'var(--ae-gradient-primary)',
       color: 'rgba(255,255,255,0.95)',
       border: 'none',
-      boxShadow: '0 14px 28px rgba(168,149,106,.18)',
+      boxShadow: 'var(--ae-shadow-button)',
     },
     ghost: {
       background: 'rgba(255,255,255,0.58)',
@@ -45,27 +49,43 @@ export default function Button({
       background: 'var(--ae-danger)',
       color: 'rgba(255,255,255,0.95)',
       border: 'none',
-      boxShadow: '0 10px 20px rgba(196,122,110,.15)',
+      boxShadow: 'var(--ae-shadow-button-danger)',
     },
   };
 
   const s = sizeStyles[size];
   const v = variantStyles[variant];
 
+  const spinner = (
+    <span
+      aria-hidden="true"
+      style={{
+        width: fontSizeMap[size],
+        height: fontSizeMap[size],
+        border: '2px solid rgba(255,255,255,0.3)',
+        borderTopColor: 'rgba(255,255,255,0.9)',
+        borderRadius: '50%',
+        animation: 'btn-spin 600ms linear infinite',
+      }}
+    />
+  );
+
   return (
     <button
       type={type}
-      onClick={onClick}
-      disabled={disabled}
+      onClick={loading ? undefined : onClick}
+      disabled={disabled || loading}
       aria-label={ariaLabel}
-      aria-disabled={disabled || undefined}
+      aria-disabled={disabled || loading || undefined}
+      aria-busy={loading || undefined}
       className={`ae-btn ${className}`}
       style={{
         ...s,
         ...v,
         fontWeight: 600,
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.5 : 1,
+        cursor: disabled || loading ? 'not-allowed' : 'pointer',
+        opacity: loading ? 0.7 : disabled ? 0.5 : 1,
+        pointerEvents: loading ? 'none' : undefined,
         transition: 'transform 180ms ease, box-shadow 180ms ease, background 180ms ease',
         display: 'inline-flex',
         alignItems: 'center',
@@ -73,6 +93,7 @@ export default function Button({
         gap: 8,
       }}
     >
+      {loading && spinner}
       {children}
       <style jsx>{`
         .ae-btn:hover:not(:disabled) {
@@ -80,6 +101,14 @@ export default function Button({
         }
         .ae-btn:active:not(:disabled) {
           transform: translateY(0.5px);
+        }
+        .ae-btn:focus-visible:not(:disabled) {
+          outline: 2px solid var(--ae-accent);
+          outline-offset: 2px;
+          box-shadow: 0 0 0 4px rgba(99, 91, 255, 0.15);
+        }
+        @keyframes btn-spin {
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </button>

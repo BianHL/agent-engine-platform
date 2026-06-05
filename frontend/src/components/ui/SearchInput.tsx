@@ -7,6 +7,7 @@ interface SearchInputProps {
   onChange?: (value: string) => void;
   placeholder?: string;
   className?: string;
+  'aria-label'?: string;
 }
 
 export default function SearchInput({
@@ -14,9 +15,14 @@ export default function SearchInput({
   onChange,
   placeholder = 'Search...',
   className = '',
+  'aria-label': ariaLabel,
 }: SearchInputProps) {
+  const inputId = React.useId();
+  const resolvedLabel = ariaLabel || placeholder;
+
   return (
     <div
+      role="search"
       className={className}
       style={{
         display: 'flex',
@@ -32,7 +38,10 @@ export default function SearchInput({
     >
       <SearchOutlined style={{ fontSize: 14, color: 'var(--ae-muted)' }} />
       <input
+        id={inputId}
         type="text"
+        role="searchbox"
+        aria-label={resolvedLabel}
         value={value}
         onChange={(e) => onChange?.(e.target.value)}
         placeholder={placeholder}

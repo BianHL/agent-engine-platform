@@ -17,11 +17,11 @@ export default function StatusBadge({ status, text, size = 'md' }: StatusBadgePr
   };
 
   const glowColors = {
-    success: 'rgba(111,155,124,.15)',
-    warning: 'rgba(208,164,93,.15)',
-    danger: 'rgba(196,122,110,.15)',
-    info: 'rgba(122,138,106,.15)',
-    processing: 'rgba(208,164,93,.15)',
+    success: 'var(--ae-bg-success)',
+    warning: 'var(--ae-bg-warning)',
+    danger: 'var(--ae-bg-danger)',
+    info: 'var(--ae-bg-info)',
+    processing: 'var(--ae-bg-warning)',
   };
 
   const displayText = text || status.charAt(0).toUpperCase() + status.slice(1);

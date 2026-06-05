@@ -62,9 +62,9 @@ export function ToastContainer() {
 function ToastItem({ toast }: { toast: Toast }) {
   const icons = { success: '✓', error: '✕', warning: '!' };
   const bgColors = {
-    success: 'rgba(111,155,124,.12)',
-    error: 'rgba(196,122,110,.12)',
-    warning: 'rgba(208,164,93,.12)',
+    success: 'var(--ae-bg-success)',
+    error: 'var(--ae-bg-danger)',
+    warning: 'var(--ae-bg-warning)',
   };
 
   return (

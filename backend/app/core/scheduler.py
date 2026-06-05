@@ -146,7 +146,7 @@ class SchedulerService:
             try:
                 await self._task
             except asyncio.CancelledError:
-                pass
+                pass  # Expected during shutdown
         self._task = None
         self._cron_triggers.clear()
         self._event_triggers.clear()

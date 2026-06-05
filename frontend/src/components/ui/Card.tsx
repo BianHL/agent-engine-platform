@@ -24,7 +24,7 @@ export default function Card({
       className={`${hover ? 'card-hover' : ''} ${className}`}
       style={{
         borderRadius: radius,
-        background: 'linear-gradient(180deg, rgba(255,255,255,0.82), rgba(252,250,247,0.66))',
+        background: 'var(--ae-gradient-card)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         border: '1px solid var(--ae-line)',

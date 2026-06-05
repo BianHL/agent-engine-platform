@@ -82,8 +82,8 @@ class PluginSandbox:
             for res, val in limits:
                 try:
                     resource.setrlimit(res, (val, val))
-                except (ValueError, OSError):
-                    pass
+                except (ValueError, OSError) as e:
+                    logger.debug("Failed to set resource limit %s: %s", res, e)
 
         safe_env = {k: os.environ.get(k, "") for k in ("PATH", "HOME", "TMPDIR") if k in os.environ or k == "PATH"}
 
@@ -141,8 +141,8 @@ class PluginSandbox:
                     proc.kill()
             try:
                 os.unlink(script_path)
-            except OSError:
-                pass
+            except OSError as e:
+                logger.debug("Failed to clean up temp script %s: %s", script_path, e)
 
     def _build_wrapper(self, code: str, entry_point: str, params: dict, config: dict) -> str:
         params_repr = repr(params)
@@ -320,8 +320,8 @@ class DockerPluginSandbox:
             if container:
                 try:
                     container.remove(force=True)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("Failed to remove plugin container %s: %s", container.id, e)
 
     def _build_wrapper(self, code: str, entry_point: str, params: dict, config: dict) -> str:
         params_json = json.dumps(params, ensure_ascii=False)

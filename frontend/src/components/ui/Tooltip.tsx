@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useId } from 'react';
 
 interface TooltipProps {
   children: React.ReactNode;
@@ -9,6 +9,7 @@ interface TooltipProps {
 
 export default function Tooltip({ children, content, position = 'top' }: TooltipProps) {
   const [visible, setVisible] = useState(false);
+  const tooltipId = useId();
 
   const positionStyles = {
     top: { bottom: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)' },
@@ -23,8 +24,12 @@ export default function Tooltip({ children, content, position = 'top' }: Tooltip
       onMouseEnter={() => setVisible(true)}
       onMouseLeave={() => setVisible(false)}
     >
-      {children}
+      {React.cloneElement(children as React.ReactElement, {
+        'aria-describedby': visible ? tooltipId : undefined,
+      })}
       <span
+        id={tooltipId}
+        role="tooltip"
         style={{
           position: 'absolute',
           ...positionStyles[position],

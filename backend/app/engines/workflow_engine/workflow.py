@@ -603,42 +603,42 @@ class WorkflowEngine:
             try:
                 if state.evaluate_expression(exit_condition):
                     break
-            except:
-                pass
+            except Exception as e:
+                logger.warning(
+                    "Loop exit condition evaluation failed at iteration %d: %s", i, e
+                )
+                break
             results.append({"iteration": i})
 
         return {"iterations": len(results), "results": results}
 
     async def _execute_http(self, node: WorkflowNode, state: WorkflowState) -> Any:
-        import httpx
         config = node.config
         url = config.get("url", "")
         method = config.get("method", "GET").upper()
 
-        from app.core.ssrf import is_safe_url
-        safe, reason = is_safe_url(url)
-        if not safe:
-            return {"error": f"URL blocked: {reason}", "status_code": 0}
-
-        # Replace variables in URL
+        # Replace variables in URL BEFORE SSRF check to prevent bypass via state variables
         for key, value in state.variables.items():
             url = url.replace(f"{{{key}}}", str(value))
 
         headers = config.get("headers", {})
         body = config.get("body", {})
 
-        async with httpx.AsyncClient(timeout=node.timeout) as client:
-            http_method = getattr(client, method.lower(), None)
-            if http_method is None:
-                return {"error": f"Unsupported HTTP method: {method}", "status_code": 0}
+        from app.core.ssrf import safe_request
+        try:
+            kwargs = {}
+            if method not in ("GET", "HEAD", "DELETE"):
+                kwargs["json"] = body
 
-            if method in ("GET", "HEAD", "DELETE"):
-                resp = await http_method(url, headers=headers)
-            else:
-                # POST, PUT, PATCH and others accept a body
-                resp = await http_method(url, json=body, headers=headers)
-
+            resp = await safe_request(
+                method, url,
+                timeout=node.timeout,
+                headers=headers,
+                **kwargs,
+            )
             return {"status_code": resp.status_code, "body": resp.text[:5000]}
+        except ValueError as e:
+            return {"error": f"URL blocked: {e}", "status_code": 0}
 
     async def _execute_code(self, node: WorkflowNode, state: WorkflowState) -> dict:
         """Execute code in isolated subprocess with process group and resource limits.
@@ -717,8 +717,8 @@ class WorkflowEngine:
                         updated_vars = _json.loads(raw.strip())
                         for k, v in updated_vars.items():
                             state.set_var(k, v)
-                    except _json.JSONDecodeError:
-                        pass
+                    except _json.JSONDecodeError as e:
+                        logger.debug("Code node output not valid JSON, skipping state update: %s", e)
                 return {
                     "output": raw[:5000],
                     "error": None,

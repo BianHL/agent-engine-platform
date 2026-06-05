@@ -1,5 +1,8 @@
 """OCR adapter for image text extraction."""
+import logging
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 class OCRAdapter:
@@ -63,7 +66,7 @@ class TesseractOCRAdapter(OCRAdapter):
                         if conf > 0:
                             confidences.append(conf)
                     except ValueError:
-                        pass
+                        pass  # Non-numeric confidence value in TSV output
 
             avg_confidence = sum(confidences) / len(confidences) / 100.0 if confidences else 0.0
 

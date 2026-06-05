@@ -1,7 +1,10 @@
+import logging
 import time
 from collections import defaultdict
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+
+logger = logging.getLogger(__name__)
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -56,8 +59,8 @@ class _LoginRateLimiter:
             pipe.expire(key, self.window_seconds)
             results = await pipe.execute()
             return results[2] <= self.max_attempts
-        except Exception:
-            pass  # fall through to in-memory
+        except Exception as e:
+            logger.warning("Redis rate limit check failed, falling back to in-memory: %s", e)
 
         # In-memory fallback
         timestamps = self._store[ip]

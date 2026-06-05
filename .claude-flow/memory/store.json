@@ -1,0 +1,11 @@
+{
+  "entries": {
+    "cmd-1780395515806": {
+      "key": "cmd-1780395515806",
+      "value": "{\"command\":\"sed -n '785,840p' backend/app/platform/marketplace_service/marketplace_service.py && echo \\\"===\\\" && sed -n '1090,1115p' backend/app/platform/marketplace_service/marketplace_service.py\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "createdAt": "2026-06-02T10:18:35.806Z"
+    }
+  },
+  "version": "3.0.0"
+}

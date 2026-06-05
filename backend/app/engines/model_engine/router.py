@@ -1,9 +1,12 @@
 import asyncio
+import logging
 import time
 from enum import Enum
 from typing import Optional
 from app.engines.model_engine.base import BaseLLMAdapter
 from app.schemas.common import LLMResponse, ProviderEndpoint
+
+logger = logging.getLogger(__name__)
 
 
 class CircuitBreaker:
@@ -136,8 +139,8 @@ class ModelRouter:
                 try:
                     endpoint = await self.select_provider(cached["model"])
                     return endpoint, cached["model"]
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("Cached model %s unavailable, falling back to estimation: %s", cached["model"], e)
 
         # 3. Estimate complexity
         estimator = complexity_estimator or ComplexityEstimator()

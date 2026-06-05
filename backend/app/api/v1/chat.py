@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import os
 import uuid
 from pathlib import Path
@@ -16,6 +17,8 @@ from app.core.database import async_session, get_db
 from app.engines.safety_engine.safety import SafetyAction, SafetyEngine, SafetyPolicy
 from app.models.base import AgentModel, ConversationModel, MessageModel
 from app.schemas.api import ChatCompletionResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -121,8 +124,8 @@ async def chat_completions(
             if citations:
                 context_text = "\n\n".join([f"[Source {i+1}] {c['content']}" for i, c in enumerate(citations)])
                 llm_messages[0]["content"] += f"\n\nRelevant knowledge:\n{context_text}"
-        except Exception:
-            pass  # Retrieval is optional; don't block chat on failure
+        except Exception as e:
+            logger.warning("Knowledge retrieval failed: %s", e)
 
     # Get LLM adapter
     llm_adapter = _get_llm_adapter(request, agent)

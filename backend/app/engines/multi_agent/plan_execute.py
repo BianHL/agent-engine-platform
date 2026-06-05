@@ -395,15 +395,15 @@ class PlanAndExecuteAgent:
         if json_block:
             try:
                 return json.loads(json_block.group(1))
-            except (json.JSONDecodeError, TypeError):
-                pass
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.debug("JSON code block parse failed: %s", e)
 
         # Try bare JSON object
         json_match = re.search(r"\{.*\}", text, re.DOTALL)
         if json_match:
             try:
                 return json.loads(json_match.group(0))
-            except (json.JSONDecodeError, TypeError):
-                pass
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.debug("Bare JSON parse failed: %s", e)
 
         return None

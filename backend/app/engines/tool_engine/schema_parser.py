@@ -6,7 +6,7 @@ from typing import Any, Optional
 
 import httpx
 
-from app.core.ssrf import is_safe_url
+from app.core.ssrf import safe_request
 from app.engines.tool_engine.registry import ToolDef
 
 logger = logging.getLogger(__name__)
@@ -112,11 +112,6 @@ def _create_api_handler(
         for name, value in params.items():
             url = url.replace(f"{{{name}}}", str(value))
 
-        # SSRF validation before making the request
-        safe, reason = is_safe_url(url)
-        if not safe:
-            return {"error": f"SSRF protection: blocked URL - {reason}"}
-
         # Separate query params and body
         query_params = {}
         body = {}
@@ -129,20 +124,17 @@ def _create_api_handler(
                 body[name] = value
 
         try:
-            async with httpx.AsyncClient(timeout=30) as client:
-                kwargs: dict[str, Any] = {
-                    "method": method,
-                    "url": url,
-                    "params": query_params,
-                }
-                if body and method in ("post", "put", "patch"):
-                    kwargs["json"] = body
+            kwargs: dict[str, Any] = {"params": query_params}
+            if body and method in ("post", "put", "patch"):
+                kwargs["json"] = body
 
-                resp = await client.request(**kwargs)
-                return {
-                    "status_code": resp.status_code,
-                    "body": resp.text[:50000],
-                }
+            resp = await safe_request(method, url, timeout=30, **kwargs)
+            return {
+                "status_code": resp.status_code,
+                "body": resp.text[:50000],
+            }
+        except ValueError as e:
+            return {"error": f"SSRF protection: {e}"}
         except Exception as e:
             return {"error": str(e)}
 

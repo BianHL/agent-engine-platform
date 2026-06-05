@@ -153,7 +153,7 @@ async def _authenticate_token(
     except HTTPException:
         raise  # Re-raise HTTPException (including revoked token error)
     except JWTError:
-        pass  # fall through to API token lookup
+        pass  # Expected: fall through to API token lookup
 
     # --- Attempt 2: API token lookup ---
     token_hash = hashlib.sha256(token_str.encode()).hexdigest()

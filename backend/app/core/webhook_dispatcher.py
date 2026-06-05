@@ -14,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import async_session
-from app.core.ssrf import is_safe_url
+from app.core.ssrf import safe_request
 from app.models.base import WebhookEventModel, WebhookModel
 
 logger = logging.getLogger(__name__)
@@ -66,36 +66,34 @@ async def deliver_webhook(
     last_status = "pending"
     last_response_status: Optional[int] = None
 
-    safe, reason = is_safe_url(webhook.url)
-    if not safe:
-        logger.error("Webhook %s URL blocked: %s", webhook.id, reason)
-        event.status = "blocked"
-        event.response_status = 0
-        await db.flush()
-        return
-
     for attempt in range(len(RETRY_DELAYS) + 1):
         try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                response = await client.post(
-                    webhook.url,
-                    content=payload_bytes,
-                    headers=headers,
-                )
-                last_response_status = response.status_code
+            response = await safe_request(
+                "POST", webhook.url,
+                timeout=10.0,
+                content=payload_bytes,
+                headers=headers,
+            )
+            last_response_status = response.status_code
 
-                if 200 <= response.status_code < 300:
-                    last_status = "delivered"
-                    event.delivered_at = datetime.now(UTC).replace(tzinfo=None)
-                    break
-                else:
-                    last_status = "failed"
-                    logger.warning(
-                        "Webhook %s delivery attempt %d returned %d",
-                        webhook.id,
-                        attempt + 1,
-                        response.status_code,
-                    )
+            if 200 <= response.status_code < 300:
+                last_status = "delivered"
+                event.delivered_at = datetime.now(UTC).replace(tzinfo=None)
+                break
+            else:
+                last_status = "failed"
+                logger.warning(
+                    "Webhook %s delivery attempt %d returned %d",
+                    webhook.id,
+                    attempt + 1,
+                    response.status_code,
+                )
+        except ValueError as exc:
+            logger.error("Webhook %s URL blocked: %s", webhook.id, exc)
+            event.status = "blocked"
+            event.response_status = 0
+            await db.flush()
+            return
         except Exception as exc:
             last_status = "failed"
             logger.warning(

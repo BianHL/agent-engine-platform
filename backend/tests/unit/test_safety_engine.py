@@ -1,5 +1,6 @@
 """Unit tests for Safety Engine"""
 import pytest
+from unittest.mock import AsyncMock
 from app.engines.safety_engine.safety import (
     SafetyEngine, SafetyPolicy, SafetyAction, SafetyResult, SafetyIssue
 )
@@ -179,3 +180,46 @@ def test_safety_issue_model():
     issue = SafetyIssue(type="test", detail="test detail", severity="high", action=SafetyAction.BLOCK)
     assert issue.type == "test"
     assert issue.severity == "high"
+
+
+# === LLM Injection Check WARN vs BLOCK Tests ===
+
+@pytest.mark.asyncio
+async def test_llm_check_warn_does_not_block():
+    """When LLM injection check returns a WARN issue (e.g. check unavailable),
+    check_input should NOT block the input — only append the warning."""
+    engine = SafetyEngine(SafetyPolicy())
+    warn_issue = SafetyIssue(
+        type="safety_check_unavailable",
+        detail="LLM safety check could not be performed",
+        severity="medium",
+        action=SafetyAction.WARN,
+    )
+    # Mock _llm_injection_check to return a WARN issue (simulating LLM outage)
+    engine._llm_injection_check = AsyncMock(return_value=warn_issue)
+    # Use a long input that exceeds the 100-char threshold for LLM check
+    long_safe_input = "What is the weather like today? " * 10
+    result = await engine.check_input(long_safe_input, llm_adapter=object())
+    # Should NOT be blocked — WARN issues are informational only
+    assert result.safe is True
+    assert result.action != SafetyAction.BLOCK
+    assert any(i.type == "safety_check_unavailable" for i in result.issues)
+
+
+@pytest.mark.asyncio
+async def test_llm_check_block_still_blocks():
+    """When LLM injection check returns a BLOCK issue (actual injection detected),
+    check_input should block the input."""
+    engine = SafetyEngine(SafetyPolicy())
+    block_issue = SafetyIssue(
+        type="prompt_injection_llm",
+        detail="LLM detected potential injection",
+        severity="high",
+        action=SafetyAction.BLOCK,
+    )
+    engine._llm_injection_check = AsyncMock(return_value=block_issue)
+    long_safe_input = "What is the weather like today? " * 10
+    result = await engine.check_input(long_safe_input, llm_adapter=object())
+    assert result.safe is False
+    assert result.action == SafetyAction.BLOCK
+    assert any(i.type == "prompt_injection_llm" for i in result.issues)

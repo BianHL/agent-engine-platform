@@ -35,8 +35,8 @@ def cleanup_temp_files(max_age_hours: int = 24):
                 if os.path.getmtime(fp) < cutoff:
                     os.remove(fp)
                     removed += 1
-            except OSError:
-                pass
+            except OSError as e:
+                logger.debug("Failed to remove temp file %s: %s", fp, e)
 
     logger.info(f"Cleaned up {removed} temp files")
     return {"removed": removed}

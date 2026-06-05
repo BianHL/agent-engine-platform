@@ -373,8 +373,8 @@ class DualLevelRetriever:
                     low_level=data.get("low_level", []),
                     high_level=data.get("high_level", []),
                 )
-        except (json.JSONDecodeError, KeyError):
-            pass
+        except (json.JSONDecodeError, KeyError) as e:
+            logger.debug("LLM keyword extraction parse failed, returning empty: %s", e)
         return ExtractedKeywords(low_level=[], high_level=[])
 
     @staticmethod

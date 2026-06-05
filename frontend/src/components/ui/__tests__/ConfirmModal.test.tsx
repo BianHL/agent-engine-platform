@@ -64,27 +64,49 @@ describe('ConfirmModal', () => {
     expect(screen.getByTestId('rich-content')).toBeInTheDocument();
   });
 
-  it('applies danger style to OK button when danger is true', () => {
+  it('applies danger background to OK button when danger is true', () => {
     render(<ConfirmModal {...defaultProps} danger={true} />);
     const okButton = screen.getByText('OK').closest('button');
-    expect(okButton).toHaveClass('ant-btn-dangerous');
+    expect(okButton?.style.background).toContain('var(--ae-danger');
   });
 
-  it('does not apply danger style by default', () => {
+  it('applies accent background by default', () => {
     render(<ConfirmModal {...defaultProps} />);
     const okButton = screen.getByText('OK').closest('button');
-    expect(okButton).not.toHaveClass('ant-btn-dangerous');
+    expect(okButton?.style.background).toContain('var(--ae-accent');
   });
 
-  it('shows loading state on OK button when confirmLoading is true', () => {
+  it('shows loading state when confirmLoading is true', () => {
     render(<ConfirmModal {...defaultProps} confirmLoading={true} />);
-    const okButton = screen.getByText('OK').closest('button');
-    expect(okButton).toHaveClass('ant-btn-loading');
+    const okButton = screen.getByText('…').closest('button');
+    expect(okButton).toBeDisabled();
   });
 
-  it('does not show loading state by default', () => {
+  it('disables cancel button during loading', () => {
+    render(<ConfirmModal {...defaultProps} confirmLoading={true} />);
+    const cancelButton = screen.getByText('Cancel').closest('button');
+    expect(cancelButton).toBeDisabled();
+  });
+
+  it('has dialog role with aria-modal', () => {
     render(<ConfirmModal {...defaultProps} />);
-    const okButton = screen.getByText('OK').closest('button');
-    expect(okButton).not.toHaveClass('ant-btn-loading');
+    expect(screen.getByRole('dialog')).toHaveAttribute('aria-modal', 'true');
+  });
+
+  it('has aria-label matching title', () => {
+    render(<ConfirmModal {...defaultProps} />);
+    expect(screen.getByRole('dialog')).toHaveAttribute('aria-label', 'Confirm Action');
+  });
+
+  it('calls onCancel when overlay is clicked', () => {
+    render(<ConfirmModal {...defaultProps} />);
+    fireEvent.click(screen.getByRole('dialog'));
+    expect(defaultProps.onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onCancel on Escape key', () => {
+    render(<ConfirmModal {...defaultProps} />);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(defaultProps.onCancel).toHaveBeenCalledTimes(1);
   });
 });
